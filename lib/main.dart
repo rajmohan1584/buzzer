@@ -1,4 +1,5 @@
 import 'package:buzzer/client/client.dart';
+import 'package:buzzer/score_board/score_board.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:flutter/material.dart';
 
@@ -40,6 +41,11 @@ class MyHomePageState extends State<MyHomePage> {
             const SizedBox(
               height: 20,
             ),
+            ElevatedButton(
+                onPressed: _onScoreBoard, child: const Text("Score Board")),
+            const SizedBox(
+              height: 20,
+            ),
             ElevatedButton(onPressed: _onServer, child: const Text("Server"))
           ],
         ),
@@ -52,6 +58,13 @@ class MyHomePageState extends State<MyHomePage> {
         context,
         MaterialPageRoute(
             builder: (BuildContext context) => const BuzzClient()));
+  }
+
+  void _onScoreBoard() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (BuildContext context) => const BuzzScoreBoard()));
   }
 
   void _onServer() {

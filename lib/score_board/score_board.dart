@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:buzzer/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/util/widgets.dart';
@@ -5,21 +7,48 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
-class BuzzClient extends StatefulWidget {
-  const BuzzClient({super.key});
+class BuzzScoreBoard extends StatefulWidget {
+  const BuzzScoreBoard({super.key});
 
   @override
-  State<BuzzClient> createState() => _BuzzClientState();
+  State<BuzzScoreBoard> createState() => _BuzzScoreBoardState();
 }
 
-class _BuzzClientState extends State<BuzzClient> {
-  BuzzState state = BuzzState.clientWaitingToJoin;
+class _BuzzScoreBoardState extends State<BuzzScoreBoard> {
+  BuzzState state = BuzzState.scoreBoardWaitingToJoin;
   bool connected = false;
+  late Timer? _timer;
 
   @override
   void initState() {
-    Log.log('Client InitState');
+    Log.log('ScoreBoard InitState');
+    startTimer();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    stopTimer();
+    super.dispose();
+  }
+
+  startTimer() {
+    /*
+    if (_timer?.isActive) {
+      return;
+    }
+    */
+    const dur = Duration(seconds: 1);
+    _timer = Timer.periodic(dur, onTimer);
+    onTimer(_timer);
+  }
+
+  onTimer(timer) {
+    Log.log("On Timer");
+  }
+
+  stopTimer() {
+    _timer?.cancel();
   }
 
   setBuzzState(newState) {
@@ -62,7 +91,7 @@ class _BuzzClientState extends State<BuzzClient> {
         Log.log(error);
         socket.destroy();
         setState(() => connected = false);
-        setBuzzState(BuzzState.clientWaitingToJoin);
+        setBuzzState(BuzzState.scoreBoardWaitingToJoin);
       },
 
       // handle server ending connection
@@ -70,26 +99,22 @@ class _BuzzClientState extends State<BuzzClient> {
         Log.log('Server left.');
         socket.destroy();
         setState(() => connected = false);
-        setBuzzState(BuzzState.clientWaitingToJoin);
+        setBuzzState(BuzzState.scoreBoardWaitingToJoin);
       },
     );
 
     setState(() => connected = true);
-    setBuzzState(BuzzState.clientWaitingForCmd);
-    socket.write("Hello from Client");
+    setBuzzState(BuzzState.scoreBoardConnected);
+    socket.write("Hello from ScoreBoard");
   }
 
   @override
   Widget build(BuildContext context) {
     switch (state) {
-      case BuzzState.clientWaitingToJoin:
+      case BuzzState.scoreBoardWaitingToJoin:
         return handleWaitingToJoin();
-      case BuzzState.clientWaitingForCmd:
-        return handleWaitingForCmd();
-      case BuzzState.clientAreYouReady:
-        return Text('Are You Ready: $state');
-      case BuzzState.clientReady:
-        return Text('Iam Ready: $state');
+      case BuzzState.scoreBoardConnected:
+        return handleScoreBoardConnected();
       default:
         return Text('Bug State: $state');
     }
@@ -99,7 +124,7 @@ class _BuzzClientState extends State<BuzzClient> {
     return WIDGETS.joinButton(connectToServerAndListen);
   }
 
-  Widget handleWaitingForCmd() {
+  Widget handleScoreBoardConnected() {
     return const Center(child: Text("Connected. Waiting for CMD"));
   }
 }

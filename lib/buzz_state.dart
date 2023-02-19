@@ -1,10 +1,16 @@
 enum BuzzState {
+  // Client
   clientWaitingToJoin,
-  clientWwaitingForCmd,
+  clientWaitingForCmd,
   clientAreYouReady,
   clientReady,
 
+  // Score Board - client
+  scoreBoardWaitingToJoin,
+  scoreBoardConnected,
+
   // Server
   serverWaitingToCreate,
-  serverListining
+  serverWaitingForClients,
+  serverListining,
 }

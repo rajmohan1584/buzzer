@@ -15,6 +15,7 @@ class BuzzServer extends StatefulWidget {
 class _BuzzServerState extends State<BuzzServer> {
   BuzzState state = BuzzState.serverWaitingToCreate;
   late final ServerSocket server;
+  bool created = false;
 
   @override
   void initState() {
@@ -28,6 +29,10 @@ class _BuzzServerState extends State<BuzzServer> {
     const port = 5678;
     server = await ServerSocket.bind(ip, port);
     Log.log('Server created: ${ip.address}: $port');
+    setState(() {
+      created = true;
+      state = BuzzState.serverWaitingForClients;
+    });
     // listen for clent connections to the server
     server.listen((client) {
       handleNewConnection(client);
@@ -69,6 +74,8 @@ class _BuzzServerState extends State<BuzzServer> {
     switch (state) {
       case BuzzState.serverWaitingToCreate:
         return handleServerWaitingToCreat();
+      case BuzzState.serverWaitingForClients:
+        return handleServerWaitingForClients();
       case BuzzState.clientAreYouReady:
         return Text('Are You Ready: $state');
       case BuzzState.clientReady:
@@ -80,5 +87,9 @@ class _BuzzServerState extends State<BuzzServer> {
 
   Widget handleServerWaitingToCreat() {
     return WIDGETS.createServerButton(createServerAndListen);
+  }
+
+  Widget handleServerWaitingForClients() {
+    return const Center(child: Text("Connected. Waiting for Clients"));
   }
 }
