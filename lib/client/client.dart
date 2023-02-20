@@ -1,5 +1,6 @@
 import 'package:buzzer/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
+import 'package:buzzer/util/message.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -13,13 +14,22 @@ class BuzzClient extends StatefulWidget {
 }
 
 class _BuzzClientState extends State<BuzzClient> {
+  late Socket? socket;
   BuzzState state = BuzzState.clientWaitingToJoin;
   bool connected = false;
+  final userController = TextEditingController();
 
   @override
   void initState() {
     Log.log('Client InitState');
+    userController.text = "Raj";
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    userController.dispose();
+    super.dispose();
   }
 
   setBuzzState(newState) {
@@ -40,27 +50,32 @@ class _BuzzClientState extends State<BuzzClient> {
   }
 
   void connectToServerAndListen() async {
-    final socket = await connectToServer();
+    socket = await connectToServer();
 
     if (socket == null) {
       return;
     }
 
     Log.log(
-        'Connected to: ${socket.remoteAddress.address}:${socket.remotePort}');
+        'Connected to: ${socket!.remoteAddress.address}:${socket!.remotePort}');
 
     // listen for responses from the server
-    socket.listen(
+    socket!.listen(
       // handle data from the server
       (Uint8List data) {
-        final msg = String.fromCharCodes(data);
-        Log.log('From Server: $msg');
+        final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
+        if (msg == null) {
+          Log.log('error');
+          return;
+        }
+
+        handleServerMessage(socket!, msg);
       },
 
       // handle errors
       onError: (error) {
         Log.log(error);
-        socket.destroy();
+        socket!.destroy();
         setState(() => connected = false);
         setBuzzState(BuzzState.clientWaitingToJoin);
       },
@@ -68,22 +83,34 @@ class _BuzzClientState extends State<BuzzClient> {
       // handle server ending connection
       onDone: () {
         Log.log('Server left.');
-        socket.destroy();
+        socket!.destroy();
         setState(() => connected = false);
         setBuzzState(BuzzState.clientWaitingToJoin);
       },
     );
 
     setState(() => connected = true);
-    setBuzzState(BuzzState.clientWaitingForCmd);
-    socket.write("Hello from Client");
+    setBuzzState(BuzzState.clientWaitingToLogin);
+    socket!.write("Hello from Client");
   }
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text("Client"),
+        ),
+        body: Center(child: buildBody()));
+  }
+
+  Widget buildBody() {
     switch (state) {
       case BuzzState.clientWaitingToJoin:
         return handleWaitingToJoin();
+      case BuzzState.clientWaitingToLogin:
+        return handleWaitingToLogin();
+      case BuzzState.clientWaitingForLoginResponse:
+        return handleWaitingForLoginResponse();
       case BuzzState.clientWaitingForCmd:
         return handleWaitingForCmd();
       case BuzzState.clientAreYouReady:
@@ -99,7 +126,46 @@ class _BuzzClientState extends State<BuzzClient> {
     return WIDGETS.joinButton(connectToServerAndListen);
   }
 
+  void onLogin() {
+    if (!connected) return;
+    final user = userController.text;
+    if (user.isEmpty) return;
+
+    final data = {"user": user};
+
+    final login = BuzzMsg("CLIENT", "LOGIN", data);
+    String loginMsg = login.toSocketMsg();
+    Log.log("onLogin: $loginMsg}");
+    socket!.write(loginMsg);
+
+    setBuzzState(BuzzState.clientWaitingForLoginResponse);
+  }
+
+  Widget handleWaitingToLogin() {
+    return Center(
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+          TextField(
+            controller: userController,
+            decoration: const InputDecoration(
+                hintText: 'Name', labelText: 'Enter Name'),
+          ),
+          ElevatedButton(onPressed: onLogin, child: const Text("Login")),
+        ]));
+  }
+
+  Widget handleWaitingForLoginResponse() {
+    return const Center(child: Text("Waiting for Login Response"));
+  }
+
   Widget handleWaitingForCmd() {
-    return const Center(child: Text("Connected. Waiting for CMD"));
+    return const Center(child: Text("Connected. Waiting for Server Cmd"));
+  }
+
+  // Process Server messages
+  void handleServerMessage(Socket socket, BuzzMsg msg) {
+    Log.log('From Server: ${msg.toSocketMsg()}');
   }
 }

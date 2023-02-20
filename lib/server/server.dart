@@ -5,6 +5,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:buzzer/util/log.dart';
 
+import '../util/message.dart';
+
 class BuzzServer extends StatefulWidget {
   const BuzzServer({super.key});
 
@@ -13,6 +15,7 @@ class BuzzServer extends StatefulWidget {
 }
 
 class _BuzzServerState extends State<BuzzServer> {
+  final List<Socket> activeClients = [];
   BuzzState state = BuzzState.serverWaitingToCreate;
   late final ServerSocket server;
   bool created = false;
@@ -34,7 +37,7 @@ class _BuzzServerState extends State<BuzzServer> {
       state = BuzzState.serverWaitingForClients;
     });
     // listen for clent connections to the server
-    server.listen((client) {
+    server.listen((Socket client) {
       handleNewConnection(client);
     });
   }
@@ -48,11 +51,12 @@ class _BuzzServerState extends State<BuzzServer> {
     client.listen(
       // handle data from the client
       (Uint8List data) async {
-        await Future.delayed(const Duration(seconds: 1));
-        final msg = String.fromCharCodes(data);
-        Log.log('From Client: $msg');
-
-        client.write('Got your message');
+        final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
+        if (msg == null) {
+          Log.log("error");
+          return;
+        }
+        handleClientMessage(client, msg);
       },
 
       // handle errors
@@ -91,5 +95,15 @@ class _BuzzServerState extends State<BuzzServer> {
 
   Widget handleServerWaitingForClients() {
     return const Center(child: Text("Connected. Waiting for Clients"));
+  }
+
+  // Process Client messages
+  void handleClientMessage(Socket client, BuzzMsg msg) {
+    Log.log('From Client: ${msg.toSocketMsg()}');
+    /*
+    if (msg.cmd == BuzzCmd.login) {
+
+    }
+    */
   }
 }
