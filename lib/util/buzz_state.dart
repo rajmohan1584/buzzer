@@ -1,3 +1,4 @@
+
 enum BuzzState {
   // Client
   clientWaitingToJoin,

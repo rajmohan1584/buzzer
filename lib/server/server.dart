@@ -1,11 +1,12 @@
-import 'package:buzzer/buzz_state.dart';
+import 'package:buzzer/server/clients.dart';
+import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:buzzer/util/log.dart';
 
-import '../util/message.dart';
+import '../model/message.dart';
 
 class BuzzServer extends StatefulWidget {
   const BuzzServer({super.key});
@@ -15,7 +16,7 @@ class BuzzServer extends StatefulWidget {
 }
 
 class _BuzzServerState extends State<BuzzServer> {
-  final List<Socket> activeClients = [];
+  final BuzzClients clients = const BuzzClients();
   BuzzState state = BuzzState.serverWaitingToCreate;
   late final ServerSocket server;
   bool created = false;
@@ -75,6 +76,39 @@ class _BuzzServerState extends State<BuzzServer> {
 
   @override
   Widget build(BuildContext context) {
+    final appBar = AppBar(
+      title: const Text("Client"),
+    );
+
+    final availableHt =
+        MediaQuery.of(context).size.height - appBar.preferredSize.height;
+    final topPanelHeight = availableHt * 0.75;
+    final topPanelWidth = MediaQuery.of(context).size.width;
+    return Scaffold(
+        appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight));
+  }
+
+  Widget buildBody(w, h) {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: w,
+          height: h,
+          child: clients,
+        ),
+      ),
+      const Divider(
+        height: 2,
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: buildStatus(),
+      )
+    ]);
+  }
+
+  Widget buildStatus() {
     switch (state) {
       case BuzzState.serverWaitingToCreate:
         return handleServerWaitingToCreat();

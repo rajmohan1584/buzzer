@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:buzzer/buzz_state.dart';
+import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';

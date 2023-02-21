@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-//enum BuzzCmd { login="LOGIN", logout }
-
 class BuzzMsg {
   static final command = [];
   String source;

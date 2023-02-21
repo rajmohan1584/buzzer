@@ -1,10 +1,12 @@
-import 'package:buzzer/buzz_state.dart';
-import 'package:buzzer/util/log.dart';
-import 'package:buzzer/util/message.dart';
-import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/log.dart';
+import 'package:buzzer/model/message.dart';
+import 'package:buzzer/util/widgets.dart';
 import 'dart:io';
 import 'dart:typed_data';
+
+import '../util/command.dart';
 
 class BuzzClient extends StatefulWidget {
   const BuzzClient({super.key});
@@ -133,8 +135,8 @@ class _BuzzClientState extends State<BuzzClient> {
 
     final data = {"user": user};
 
-    final login = BuzzMsg("CLIENT", "LOGIN", data);
-    String loginMsg = login.toSocketMsg();
+    final loginRequest = BuzzMsg(BuzzCmd.client, BuzzCmd.lgq, data);
+    String loginMsg = loginRequest.toSocketMsg();
     Log.log("onLogin: $loginMsg}");
     socket!.write(loginMsg);
 
