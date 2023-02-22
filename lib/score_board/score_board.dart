@@ -7,14 +7,14 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
-class BuzzScoreBoard extends StatefulWidget {
-  const BuzzScoreBoard({super.key});
+class BuzzScoreBoardScreen extends StatefulWidget {
+  const BuzzScoreBoardScreen({super.key});
 
   @override
-  State<BuzzScoreBoard> createState() => _BuzzScoreBoardState();
+  State<BuzzScoreBoardScreen> createState() => _BuzzScoreBoardScreenState();
 }
 
-class _BuzzScoreBoardState extends State<BuzzScoreBoard> {
+class _BuzzScoreBoardScreenState extends State<BuzzScoreBoardScreen> {
   BuzzState state = BuzzState.scoreBoardWaitingToJoin;
   bool connected = false;
   late Timer? _timer;

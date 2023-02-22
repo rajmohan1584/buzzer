@@ -8,14 +8,14 @@ import 'dart:typed_data';
 
 import '../util/command.dart';
 
-class BuzzClient extends StatefulWidget {
-  const BuzzClient({super.key});
+class BuzzClientScreen extends StatefulWidget {
+  const BuzzClientScreen({super.key});
 
   @override
-  State<BuzzClient> createState() => _BuzzClientState();
+  State<BuzzClientScreen> createState() => _BuzzClientScreenState();
 }
 
-class _BuzzClientState extends State<BuzzClient> {
+class _BuzzClientScreenState extends State<BuzzClientScreen> {
   late Socket? socket;
   BuzzState state = BuzzState.clientWaitingToJoin;
   bool connected = false;

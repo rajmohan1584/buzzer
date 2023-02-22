@@ -1,4 +1,3 @@
-import 'package:buzzer/server/clients.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
@@ -6,17 +5,19 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:buzzer/util/log.dart';
 
+import '../model/client.dart';
 import '../model/message.dart';
+import '../util/command.dart';
 
-class BuzzServer extends StatefulWidget {
-  const BuzzServer({super.key});
+class BuzzServerScreen extends StatefulWidget {
+  const BuzzServerScreen({super.key});
 
   @override
-  State<BuzzServer> createState() => _BuzzServerState();
+  State<BuzzServerScreen> createState() => _BuzzServerScreenState();
 }
 
-class _BuzzServerState extends State<BuzzServer> {
-  final BuzzClients clients = const BuzzClients();
+class _BuzzServerScreenState extends State<BuzzServerScreen> {
+  final BuzzClients clients = BuzzClients();
   BuzzState state = BuzzState.serverWaitingToCreate;
   late final ServerSocket server;
   bool created = false;
@@ -47,6 +48,10 @@ class _BuzzServerState extends State<BuzzServer> {
     Log.log('New Connection');
     Log.log('Connection from'
         ' ${client.remoteAddress.address}:${client.remotePort}');
+
+    setState(() {
+      clients.add("Unknown", client);
+    });
 
     // listen for events from the client
     client.listen(
@@ -95,7 +100,7 @@ class _BuzzServerState extends State<BuzzServer> {
         child: SizedBox(
           width: w,
           height: h,
-          child: clients,
+          child: buildClients(),
         ),
       ),
       const Divider(
@@ -106,6 +111,21 @@ class _BuzzServerState extends State<BuzzServer> {
         child: buildStatus(),
       )
     ]);
+  }
+
+  Widget buildClients() {
+    return ListView.builder(
+      itemCount: clients.length,
+      itemBuilder: (context, int index) {
+        BuzzClient client = clients.clients[index];
+        // todo - call buildServer
+        return buildClient(client);
+      },
+    );
+  }
+
+  Widget buildClient(BuzzClient client) {
+    return Text(client.user);
   }
 
   Widget buildStatus() {
@@ -134,10 +154,17 @@ class _BuzzServerState extends State<BuzzServer> {
   // Process Client messages
   void handleClientMessage(Socket client, BuzzMsg msg) {
     Log.log('From Client: ${msg.toSocketMsg()}');
-    /*
-    if (msg.cmd == BuzzCmd.login) {
 
+    if (msg.cmd == BuzzCmd.lgq) {
+      final data = msg.data;
+      final user = data["user"] ?? "<null>";
+
+      BuzzClient? c = clients.findBySocket(client);
+      if (c != null) {
+        setState(() {
+          c.user = user;
+        });
+      }
     }
-    */
   }
 }

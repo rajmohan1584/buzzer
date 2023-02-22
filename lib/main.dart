@@ -57,21 +57,21 @@ class MyHomePageState extends State<MyHomePage> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzClient()));
+            builder: (BuildContext context) => const BuzzClientScreen()));
   }
 
   void _onScoreBoard() {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzScoreBoard()));
+            builder: (BuildContext context) => const BuzzScoreBoardScreen()));
   }
 
   void _onServer() {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzServer()));
+            builder: (BuildContext context) => const BuzzServerScreen()));
   }
 
   @override
