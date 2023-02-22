@@ -1,10 +1,14 @@
 import 'dart:io';
 
-import '../util/log.dart';
+import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/log.dart';
 
 class BuzzClient {
   String user;
   final Socket socket;
+  DateTime created = DateTime.now();
+  DateTime updated = DateTime.now();
+  BuzzState state = BuzzState.clientWaitingToJoin;
 
   BuzzClient(this.user, this.socket);
 }
@@ -26,6 +30,15 @@ class BuzzClients {
     return clients[index];
   }
 
+  int indexOfSocket(Socket socket) {
+    for (var i = 0; i < clients.length; i++) {
+      if (clients[i].socket == socket) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   BuzzClient? add(String user, Socket socket) {
     if (findByUser(user) != null) {
       Log.log('Duplicate name $user');
@@ -40,5 +53,15 @@ class BuzzClients {
     clients.add(client);
 
     return client;
+  }
+
+  void remove(Socket socket) {
+    final index = indexOfSocket(socket);
+    if (index < 0) {
+      Log.log('Cannot find socket ${socket.toString()}');
+      return;
+    }
+
+    clients.removeAt(index);
   }
 }

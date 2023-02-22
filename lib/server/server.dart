@@ -50,7 +50,12 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         ' ${client.remoteAddress.address}:${client.remotePort}');
 
     setState(() {
-      clients.add("Unknown", client);
+      BuzzClient? c = clients.add("Unknown", client);
+      if (c != null) {
+        c.created = DateTime.now();
+        c.updated = DateTime.now();
+        c.state = BuzzState.clientWaitingToLogin;
+      }
     });
 
     // listen for events from the client
@@ -69,12 +74,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       onError: (error) {
         Log.log(error);
         client.close();
+        handleCloseClient(client);
       },
 
       // handle the client closing the connection
       onDone: () {
         Log.log('Client left');
         client.close();
+        handleCloseClient(client);
       },
     );
   }
@@ -125,7 +132,21 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   Widget buildClient(BuzzClient client) {
-    return Text(client.user);
+    Widget titleRow =
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(client.user,
+          style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+      Text('${client.socket.remotePort}'),
+    ]);
+
+    return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+        elevation: 5.0,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [titleRow],
+        ));
   }
 
   Widget buildStatus() {
@@ -163,8 +184,16 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       if (c != null) {
         setState(() {
           c.user = user;
+          c.updated = DateTime.now();
         });
       }
     }
+  }
+
+  void handleCloseClient(Socket client) {
+    Log.log('Closing Client: ${client.toString()}');
+    setState(() {
+      clients.remove(client);
+    });
   }
 }
