@@ -163,7 +163,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       case BuzzState.clientWaitingForCmd:
         return handleWaitingForCmd();
       case BuzzState.clientAreYouReady:
-        return Text('Are You Ready: $state');
+        return handleAreYouReady();
       case BuzzState.clientReady:
         return Text('Iam Ready: $state');
       default:
@@ -226,6 +226,19 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     return const Center(child: Text("Connected. Waiting for Server Cmd"));
   }
 
+  Widget buildAreYouReady() {
+Center(
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+          const Text("Connected. Waiting for Server Cmd"),
+          const SizedBox(height: 20),
+          ElevatedButton(
+              onPressed: sendPingToServer, child: const Text("PING")),
+        ])    return ElevatedButton(onPressed: onPressed, child: const Text("CREATE"));
+
+  }
   // Process Server messages
   void handleServerMessage(Socket socket, BuzzMsg msg) {
     Log.log('From Server: ${msg.toSocketMsg()}');
@@ -237,6 +250,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     if (msg.cmd == BuzzCmd.ping) {
       final pong = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {});
       sendMessageToServer(pong);
+    } else if (msg.cmd == BuzzCmd.areYouReady) {
+      setBuzzState(BuzzState.clientAreYouReady);
     }
   }
 

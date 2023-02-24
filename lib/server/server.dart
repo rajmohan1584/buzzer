@@ -184,6 +184,18 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   Widget handleServerWaitingForClients() {
+    Widget actions = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        ElevatedButton(
+            onPressed: sendPingToAllClients, child: const Text("PING")),
+        ElevatedButton(
+            onPressed: sendAreYouReadyToAllClients,
+            child: const Text("ARE YOU READY")),
+      ],
+    );
+
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -191,8 +203,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
             children: <Widget>[
           const Text("Connected"),
           const SizedBox(height: 20),
-          ElevatedButton(
-              onPressed: sendPingToAllClients, child: const Text("PING")),
+          actions,
         ]));
 //    return const Center(child: Text("Connected. Waiting for Clients"));
   }
@@ -232,6 +243,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
   }
 
+  //
   void sendPingToClient(BuzzClient client) {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {});
     client.sendMessage(ping);
@@ -240,6 +252,18 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void sendPingToAllClients() {
     for (var i = 0; i < clients.length; i++) {
       sendPingToClient(clients[i]);
+    }
+  }
+
+  //
+  void sendAreYouReadyToClient(BuzzClient client) {
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.areYouReady, {});
+    client.sendMessage(ping);
+  }
+
+  void sendAreYouReadyToAllClients() {
+    for (var i = 0; i < clients.length; i++) {
+      sendAreYouReadyToClient(clients[i]);
     }
   }
 }

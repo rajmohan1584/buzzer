@@ -10,4 +10,7 @@ class BuzzCmd {
 
   static get ping => "PING";
   static get pong => "PONG";
+
+  static get areYouReady => "AUR";
+  static get iAmReady => "IAR";
 }
