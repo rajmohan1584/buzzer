@@ -20,6 +20,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   BuzzState state = BuzzState.clientWaitingToJoin;
   bool connected = false;
   final userController = TextEditingController();
+  List<BuzzMsg> serverMessages = [];
 
   @override
   void initState() {
@@ -37,6 +38,16 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   setBuzzState(newState) {
     Log.log("Setting state to $state");
     setState(() => state = newState);
+  }
+
+  void sendMessageToServer(BuzzMsg msg) {
+    if (socket == null) {
+      Log.log("error");
+    } else {
+      String s = msg.toSocketMsg();
+      Log.log("sendMessageToServer: $s");
+      socket!.write(s);
+    }
   }
 
   Future<Socket?> connectToServer() async {
@@ -98,14 +109,50 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appBar = AppBar(
+      title: const Text("Client"),
+    );
+
+    final availableHt =
+        MediaQuery.of(context).size.height - appBar.preferredSize.height;
+    final topPanelHeight = availableHt * 0.75;
+    final topPanelWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Client"),
-        ),
-        body: Center(child: buildBody()));
+        appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight));
   }
 
-  Widget buildBody() {
+  Widget buildBody(w, h) {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: w,
+          height: h,
+          child: buildClient(),
+        ),
+      ),
+      const Divider(
+        height: 2,
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: buildStatus(),
+      )
+    ]);
+  }
+
+  Widget buildClient() {
+    return ListView.builder(
+      itemCount: serverMessages.length,
+      itemBuilder: (context, int index) {
+        String msg = serverMessages[index].toString();
+        // todo - call buildServer
+        return Text(msg, style: const TextStyle(fontSize: 20));
+      },
+    );
+  }
+
+  Widget buildStatus() {
     switch (state) {
       case BuzzState.clientWaitingToJoin:
         return handleWaitingToJoin();
@@ -136,9 +183,12 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     final data = {"user": user};
 
     final loginRequest = BuzzMsg(BuzzCmd.client, BuzzCmd.lgq, data);
+    sendMessageToServer(loginRequest);
+    /*
     String loginMsg = loginRequest.toSocketMsg();
     Log.log("onLogin: $loginMsg}");
     socket!.write(loginMsg);
+    */
 
     setBuzzState(BuzzState.clientWaitingForLoginResponse);
   }
@@ -159,7 +209,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   Widget handleWaitingForLoginResponse() {
-    return const Center(child: Text("Waiting for Login Response"));
+    return Center(
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+          const Text("Connected. Waiting for Server Cmd"),
+          const SizedBox(height: 20),
+          ElevatedButton(
+              onPressed: sendPingToServer, child: const Text("PING")),
+        ]));
+    //return const Center(child: Text("Waiting for Login Response"));
   }
 
   Widget handleWaitingForCmd() {
@@ -169,5 +229,19 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   // Process Server messages
   void handleServerMessage(Socket socket, BuzzMsg msg) {
     Log.log('From Server: ${msg.toSocketMsg()}');
+
+    setState(() {
+      serverMessages.insert(0, msg);
+    });
+
+    if (msg.cmd == BuzzCmd.ping) {
+      final pong = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {});
+      sendMessageToServer(pong);
+    }
+  }
+
+  void sendPingToServer() {
+    final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {});
+    sendMessageToServer(ping);
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
 
@@ -9,14 +10,22 @@ class BuzzClient {
   DateTime created = DateTime.now();
   DateTime updated = DateTime.now();
   BuzzState state = BuzzState.clientWaitingToJoin;
-
+  BuzzMsg? serverMsg;
   BuzzClient(this.user, this.socket);
+
+  void sendMessage(BuzzMsg msg) {
+    String s = msg.toSocketMsg();
+    Log.log("sendMessage: $s");
+    socket.write(s);
+  }
 }
 
 class BuzzClients {
   final List<BuzzClient> clients = [];
 
   int get length => clients.length;
+
+  operator [](int i) => clients[i];
 
   BuzzClient? findByUser(String user) {
     final index = clients.indexWhere((c) => c.user == user);

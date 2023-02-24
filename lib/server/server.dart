@@ -89,7 +89,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      title: const Text("Client"),
+      title: const Text("Server"),
     );
 
     final availableHt =
@@ -139,20 +139,35 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       Text('${client.socket.remotePort}'),
     ]);
 
+    Widget actionRow =
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(client.serverMsg?.toString() ?? '',
+          style: const TextStyle(fontSize: 20.0)),
+      ElevatedButton(
+        onPressed: () {
+          sendPingToClient(client);
+        },
+        child: const Text("PING"),
+      )
+    ]);
+
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
         elevation: 5.0,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [titleRow],
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [titleRow, actionRow],
+          ),
         ));
   }
 
   Widget buildStatus() {
     switch (state) {
       case BuzzState.serverWaitingToCreate:
-        return handleServerWaitingToCreat();
+        return handleServerWaitingToCreate();
       case BuzzState.serverWaitingForClients:
         return handleServerWaitingForClients();
       case BuzzState.clientAreYouReady:
@@ -164,28 +179,48 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     }
   }
 
-  Widget handleServerWaitingToCreat() {
+  Widget handleServerWaitingToCreate() {
     return WIDGETS.createServerButton(createServerAndListen);
   }
 
   Widget handleServerWaitingForClients() {
-    return const Center(child: Text("Connected. Waiting for Clients"));
+    return Center(
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+          const Text("Connected"),
+          const SizedBox(height: 20),
+          ElevatedButton(
+              onPressed: sendPingToAllClients, child: const Text("PING")),
+        ]));
+//    return const Center(child: Text("Connected. Waiting for Clients"));
   }
 
   // Process Client messages
   void handleClientMessage(Socket client, BuzzMsg msg) {
     Log.log('From Client: ${msg.toSocketMsg()}');
 
-    if (msg.cmd == BuzzCmd.lgq) {
-      final data = msg.data;
-      final user = data["user"] ?? "<null>";
+    BuzzClient? c = clients.findBySocket(client);
+    if (c != null) {
+      setState(() {
+        c.serverMsg = msg;
+      });
+      if (msg.cmd == BuzzCmd.lgq) {
+        final data = msg.data;
+        final user = data["user"] ?? "<null>";
 
-      BuzzClient? c = clients.findBySocket(client);
-      if (c != null) {
         setState(() {
           c.user = user;
           c.updated = DateTime.now();
         });
+
+        // Send login response
+        final lgr = BuzzMsg(BuzzCmd.server, BuzzCmd.lgr, {});
+        c.sendMessage(lgr);
+      } else if (msg.cmd == BuzzCmd.ping) {
+        final pong = BuzzMsg(BuzzCmd.server, BuzzCmd.pong, {});
+        c.sendMessage(pong);
       }
     }
   }
@@ -195,5 +230,16 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     setState(() {
       clients.remove(client);
     });
+  }
+
+  void sendPingToClient(BuzzClient client) {
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {});
+    client.sendMessage(ping);
+  }
+
+  void sendPingToAllClients() {
+    for (var i = 0; i < clients.length; i++) {
+      sendPingToClient(clients[i]);
+    }
   }
 }

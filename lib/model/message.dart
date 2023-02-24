@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:intl/intl.dart';
 
 class BuzzMsg {
-  static final command = [];
+  //static final command = [];
+  DateTime ts = DateTime.now();
   String source;
   String cmd;
   Map<String, dynamic> data;
@@ -11,6 +13,15 @@ class BuzzMsg {
   String toSocketMsg() {
     String jsonData = json.encode(data);
     String msg = '$source~$cmd~$jsonData';
+    return msg;
+  }
+
+  @override
+  String toString() {
+    final DateFormat fmt = DateFormat('Hms');
+    String jsonData = json.encode(data);
+    String time = fmt.format(ts);
+    String msg = '$time> Source:$source, Cmd:$cmd, Data:$jsonData';
     return msg;
   }
 
