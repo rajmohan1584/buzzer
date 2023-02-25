@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/command.dart';
 import 'package:buzzer/util/log.dart';
 
 class BuzzClient {
   String user;
+  bool iAmReady = false;
+  String buzzedState = "";
   final Socket socket;
   DateTime created = DateTime.now();
   DateTime updated = DateTime.now();
@@ -72,5 +75,49 @@ class BuzzClients {
     }
 
     clients.removeAt(index);
+  }
+
+  void sortByReadyUpdated() {
+    clients.sort((a, b) {
+      if (!a.iAmReady && !b.iAmReady) {
+        // both are waiting.
+        // order by updated DESC
+        return b.updated.compareTo(a.updated);
+      }
+      if (a.iAmReady && b.iAmReady) {
+        // both are waiting.
+        // order by updated ASC
+        return a.updated.compareTo(b.updated);
+      }
+
+      if (a.iAmReady) return -1;
+      return 1;
+    });
+  }
+
+  void sortByBuzzedUpdated() {
+    clients.sort((a, b) {
+      if (a.buzzedState == BuzzCmd.buzzYes &&
+          b.buzzedState == BuzzCmd.buzzYes) {
+        // both buzzed YES.
+        // order by updated ASC
+        return a.updated.compareTo(b.updated);
+      }
+
+      if (a.buzzedState == BuzzCmd.buzzYes) return -1;
+      if (b.buzzedState == BuzzCmd.buzzYes) return 1;
+
+      if (a.buzzedState.isEmpty && b.buzzedState.isEmpty) {
+        // both have not replied - keep in middle.
+        // order by updated ASC
+        return a.updated.compareTo(b.updated);
+      }
+
+      if (a.buzzedState.isEmpty) return -1;
+      if (b.buzzedState.isEmpty) return 1;
+
+      // Both buzzed NO
+      return a.updated.compareTo(b.updated);
+    });
   }
 }

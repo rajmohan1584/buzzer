@@ -115,7 +115,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
     final availableHt =
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
-    final topPanelHeight = availableHt * 0.75;
+    final topPanelHeight = availableHt * 0.15;
     final topPanelWidth = MediaQuery.of(context).size.width;
     return Scaffold(
         appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight));
@@ -155,23 +155,23 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   Widget buildStatus() {
     switch (state) {
       case BuzzState.clientWaitingToJoin:
-        return handleWaitingToJoin();
+        return buildWaitingToJoin();
       case BuzzState.clientWaitingToLogin:
-        return handleWaitingToLogin();
+        return buildWaitingToLogin();
       case BuzzState.clientWaitingForLoginResponse:
-        return handleWaitingForLoginResponse();
+        return buildWaitingForLoginResponse();
       case BuzzState.clientWaitingForCmd:
-        return handleWaitingForCmd();
+        return buildWaitingForCmd();
       case BuzzState.clientAreYouReady:
-        return handleAreYouReady();
+        return buildAreYouReady();
       case BuzzState.clientReady:
-        return Text('Iam Ready: $state');
+        return buildReady();
       default:
         return Text('Bug State: $state');
     }
   }
 
-  Widget handleWaitingToJoin() {
+  Widget buildWaitingToJoin() {
     return WIDGETS.joinButton(connectToServerAndListen);
   }
 
@@ -193,7 +193,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     setBuzzState(BuzzState.clientWaitingForLoginResponse);
   }
 
-  Widget handleWaitingToLogin() {
+  Widget buildWaitingToLogin() {
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -208,7 +208,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
         ]));
   }
 
-  Widget handleWaitingForLoginResponse() {
+  Widget buildWaitingForLoginResponse() {
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -222,23 +222,76 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     //return const Center(child: Text("Waiting for Login Response"));
   }
 
-  Widget handleWaitingForCmd() {
+  Widget buildWaitingForCmd() {
     return const Center(child: Text("Connected. Waiting for Server Cmd"));
   }
 
   Widget buildAreYouReady() {
-Center(
+    Widget actions = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        ElevatedButton(onPressed: sendPingToServer, child: const Text("PING")),
+        SizedBox(
+            height: 100, //height of button
+            width: 300, //width of button
+            child: ElevatedButton(
+                onPressed: sendIamReadyToServer,
+                child: const Text("I AM READY"))),
+      ],
+    );
+
+    return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
           const Text("Connected. Waiting for Server Cmd"),
           const SizedBox(height: 20),
-          ElevatedButton(
-              onPressed: sendPingToServer, child: const Text("PING")),
-        ])    return ElevatedButton(onPressed: onPressed, child: const Text("CREATE"));
-
+          actions
+        ]));
   }
+
+  Widget buildReady() {
+    return Center(
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+          WIDGETS.noBuzzer(onBuzzedNo),
+          WIDGETS.yesBuzzer(onBuzzedYes),
+        ]));
+  }
+
+  /*
+  void onBuzzed() {
+    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzz, {});
+    sendMessageToServer(buzz);
+  }
+  */
+
+  void onBuzzedYes() {
+    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzYes, {});
+    sendMessageToServer(buzz);
+  }
+
+  void onBuzzedNo() {
+    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzNo, {});
+    sendMessageToServer(buzz);
+  }
+
+  void sendPingToServer() {
+    final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {});
+    sendMessageToServer(ping);
+  }
+
+  void sendIamReadyToServer() {
+    final data = {"ready": true};
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.iAmReady, data);
+    sendMessageToServer(ping);
+    setBuzzState(BuzzState.clientReady);
+  }
+
   // Process Server messages
   void handleServerMessage(Socket socket, BuzzMsg msg) {
     Log.log('From Server: ${msg.toSocketMsg()}');
@@ -253,10 +306,5 @@ Center(
     } else if (msg.cmd == BuzzCmd.areYouReady) {
       setBuzzState(BuzzState.clientAreYouReady);
     }
-  }
-
-  void sendPingToServer() {
-    final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {});
-    sendMessageToServer(ping);
   }
 }

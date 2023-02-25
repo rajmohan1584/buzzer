@@ -126,12 +126,12 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       itemBuilder: (context, int index) {
         BuzzClient client = clients.clients[index];
         // todo - call buildServer
-        return buildClient(client);
+        return buildClient(client, index);
       },
     );
   }
 
-  Widget buildClient(BuzzClient client) {
+  Widget buildClient0(BuzzClient client) {
     Widget titleRow =
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text(client.user,
@@ -161,6 +161,55 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [titleRow, actionRow],
           ),
+        ));
+  }
+
+  Widget buildClient(BuzzClient client, int index) {
+    Widget ready;
+    if (client.iAmReady) {
+      ready = const Text("READY",
+          style: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.green));
+    } else {
+      ready = const Text("WAITING",
+          style: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.redAccent));
+    }
+    Widget row = IntrinsicWidth(
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Expanded(
+          child: Text(client.user,
+              style: const TextStyle(
+                  fontSize: 20.0, fontWeight: FontWeight.bold))),
+      Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
+      Expanded(child: WIDGETS.buzzedStatus(client.buzzedState, index)),
+      Expanded(child: ready),
+      Expanded(
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          WIDGETS.plusIconButton(() => {}),
+          WIDGETS.minusIconButton(() => {}),
+        ]),
+      ),
+      Expanded(
+          child: ElevatedButton(
+        onPressed: () {
+          sendPingToClient(client);
+        },
+        child: const Text("PING"),
+      ))
+    ]));
+
+    return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+        elevation: 5.0,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: row,
         ));
   }
 
@@ -213,12 +262,13 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     Log.log('From Client: ${msg.toSocketMsg()}');
 
     BuzzClient? c = clients.findBySocket(client);
+    final data = msg.data;
+
     if (c != null) {
       setState(() {
         c.serverMsg = msg;
       });
       if (msg.cmd == BuzzCmd.lgq) {
-        final data = msg.data;
         final user = data["user"] ?? "<null>";
 
         setState(() {
@@ -232,6 +282,18 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       } else if (msg.cmd == BuzzCmd.ping) {
         final pong = BuzzMsg(BuzzCmd.server, BuzzCmd.pong, {});
         c.sendMessage(pong);
+      } else if (msg.cmd == BuzzCmd.iAmReady) {
+        setState(() {
+          c.iAmReady = data["ready"] ?? false;
+          c.updated = DateTime.now();
+          clients.sortByReadyUpdated();
+        });
+      } else if (msg.cmd == BuzzCmd.buzzYes || msg.cmd == BuzzCmd.buzzNo) {
+        setState(() {
+          c.buzzedState = msg.cmd;
+          c.updated = DateTime.now();
+          clients.sortByBuzzedUpdated();
+        });
       }
     }
   }
@@ -259,6 +321,11 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void sendAreYouReadyToClient(BuzzClient client) {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.areYouReady, {});
     client.sendMessage(ping);
+    setState(() {
+      client.buzzedState = "";
+      client.iAmReady = false;
+      client.updated = DateTime.now();
+    });
   }
 
   void sendAreYouReadyToAllClients() {

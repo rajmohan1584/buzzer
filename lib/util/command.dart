@@ -13,4 +13,8 @@ class BuzzCmd {
 
   static get areYouReady => "AUR";
   static get iAmReady => "IAR";
+
+  //static get buzz => "BUZZ";
+  static get buzzNo => "BUZZ-NO";
+  static get buzzYes => "BUZZ-YES";
 }

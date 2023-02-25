@@ -7,7 +7,7 @@ class BuzzMsg {
   DateTime ts = DateTime.now();
   String source;
   String cmd;
-  Map<String, dynamic> data;
+  Map<String, dynamic> data = {};
   BuzzMsg(this.source, this.cmd, this.data);
 
   String toSocketMsg() {
