@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:buzzer/util/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
@@ -62,10 +63,12 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   Future<Socket?> connectToServer() async {
-    Log.log('Connecting to server');
+    Log.log('');
     final ip = InternetAddress.anyIPv4;
+    //final ip = CONST.iPhoneIp;
     const port = 5678;
     try {
+      Log.log('Connecting to server: $ip: $port');
       return await Socket.connect(ip, port);
     } catch (e) {
       Log.log(e.toString());

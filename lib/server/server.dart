@@ -1,5 +1,6 @@
 import 'package:buzzer/util/buzz_state.dart';
-import 'package:buzzer/util/colors.dart';
+import 'package:buzzer/util/constants.dart';
+//import 'package:buzzer/util/colors.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -19,7 +20,7 @@ class BuzzServerScreen extends StatefulWidget {
 
 class _BuzzServerScreenState extends State<BuzzServerScreen> {
   final BuzzClients clients = BuzzClients();
-  BuzzState state = BuzzState.serverWaitingToCreate;
+  BuzzState state = BuzzState.serverWaitingForClients;
   late final ServerSocket server;
   bool created = false;
 
@@ -33,12 +34,12 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void createServerAndListen() async {
     Log.log('Creating server');
     final ip = InternetAddress.anyIPv4;
+    //final ip = CONST.iPhoneIp;
     const port = 5678;
     server = await ServerSocket.bind(ip, port);
-    Log.log('Server created: ${ip.address}: $port');
+    Log.log('Server created: ${server.address.address}: ${server.port}');
     setState(() {
       created = true;
-      state = BuzzState.serverWaitingForClients;
     });
     // listen for clent connections to the server
     server.listen((Socket client) {
@@ -98,8 +99,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
     final topPanelHeight = availableHt * 0.75;
     final topPanelWidth = MediaQuery.of(context).size.width;
-    return Scaffold(
-        appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight));
+
+    return WillPopScope(
+        onWillPop: () async {
+          server.close();
+          return true;
+        },
+        child: Scaffold(
+            appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight)));
   }
 
   Widget buildBody(w, h) {
@@ -228,7 +235,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
       Expanded(child: WIDGETS.buzzedStatus(client.buzzedState, index)),
       Expanded(
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           WIDGETS.plusIconButton(() => {}),
           WIDGETS.minusIconButton(() => {}),
           WIDGETS.bellIconButton(() => sendPingToClient(client)),
