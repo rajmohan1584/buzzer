@@ -1,4 +1,4 @@
-import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
@@ -23,17 +23,25 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   final userController = TextEditingController();
   String userName = "";
   List<BuzzMsg> serverMessages = [];
+  final audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
     super.initState();
+    audio();
+  }
+
+  Future audio() async {
+    AssetSource src = AssetSource("audio/Theriyuma.mp3");
+    await audioPlayer.play(src);
   }
 
   @override
   void dispose() {
     userController.dispose();
+    audioPlayer.dispose();
     super.dispose();
   }
 
@@ -294,7 +302,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.iAmReady, data);
     sendMessageToServer(ping);
     setBuzzState(BuzzState.clientReady);
-    WIDGETS.playReady();
+    audio();
   }
 
   // Process Server messages

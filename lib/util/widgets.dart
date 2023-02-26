@@ -1,4 +1,3 @@
-import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:buzzer/util/command.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -184,13 +183,5 @@ class WIDGETS {
       buzzedStateIcon(buzzedState)
     ]);
   */
-  }
-
-  static void playReady() {
-    AssetsAudioPlayer.newPlayer().open(
-      Audio("assets/audio/Theriyuma.mp3"),
-      autoStart: true,
-      showNotification: false,
-    );
   }
 }

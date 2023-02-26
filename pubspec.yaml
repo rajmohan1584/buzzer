@@ -39,7 +39,8 @@ dependencies:
   web_socket_channel: ^2.3.0
   intl: ^0.18.0
   window_manager: ^0.3.0
-  assets_audio_player: ^3.0.6
+  #assets_audio_player: ^3.0.6
+  audioplayers: ^3.0.1
   
 dev_dependencies:
   flutter_test:
@@ -103,3 +104,4 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/audio/

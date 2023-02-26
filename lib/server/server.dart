@@ -1,4 +1,5 @@
 import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/colors.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -164,7 +165,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         ));
   }
 
-  Widget buildClient(BuzzClient client, int index) {
+  Widget buildClient1(BuzzClient client, int index) {
     Widget ready;
     if (client.iAmReady) {
       ready = const Text("READY",
@@ -196,18 +197,46 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.bellIconButton(() => sendPingToClient(client)),
         ]),
       ),
-      Expanded(
-          child: ElevatedButton(
-        onPressed: () {
-          sendPingToClient(client);
-        },
-        child: const Text("PING"),
-      ))
     ]));
 
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
         elevation: 5.0,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: row,
+        ));
+  }
+
+  Widget buildClient(BuzzClient client, int index) {
+    Color color = COLORS.background["gray"]!;
+    if (client.iAmReady) {
+      color = COLORS.background["green"]!;
+    } else {
+      color = COLORS.background["yellow"]!;
+    }
+
+    final name = Text(client.user,
+        style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
+    Widget row = IntrinsicWidth(
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Expanded(child: name),
+      //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
+      Expanded(child: WIDGETS.buzzedStatus(client.buzzedState, index)),
+      Expanded(
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          WIDGETS.plusIconButton(() => {}),
+          WIDGETS.minusIconButton(() => {}),
+          WIDGETS.bellIconButton(() => sendPingToClient(client)),
+        ]),
+      ),
+    ]));
+
+    return Card(
+        color: color,
+        margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
+        elevation: 10.0,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: row,
