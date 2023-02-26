@@ -91,7 +91,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      title: WIDGETS.appBarTitle(),
+      title: WIDGETS.appBarTitle(name: "நடுவர்"),
     );
 
     final availableHt =

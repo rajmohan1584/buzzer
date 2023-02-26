@@ -127,37 +127,50 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       title: WIDGETS.appBarTitle(name: userName),
     );
 
-    final availableHt =
-        MediaQuery.of(context).size.height - appBar.preferredSize.height;
-    final topPanelHeight = availableHt * 0.15;
-    final topPanelWidth = MediaQuery.of(context).size.width;
     return WillPopScope(
         onWillPop: () async {
           socket?.close();
           return true;
         },
-        child: Scaffold(
-            appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight)));
+        child: Scaffold(appBar: appBar, body: buildBody()));
   }
 
-  Widget buildBody(w, h) {
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          width: w,
-          height: h,
-          child: buildClient(),
-        ),
-      ),
-      const Divider(
-        height: 2,
-      ),
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: buildStatus(),
-      )
-    ]);
+  Widget buildBody() {
+    return Column(
+        children: [buildMyself(), const Divider(height: 2), buildPlayArea()]);
+  }
+
+  Widget buildMyself() {
+    final name = Text(userName,
+        style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
+    Widget row = Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [name, WIDGETS.nameValue("SCORE", "0")]);
+
+    return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
+        elevation: 10.0,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: row,
+        ));
+  }
+
+  Widget buildPlayArea() {
+    if (error.isNotEmpty) {
+      return Center(child: Text(error));
+    }
+    switch (state) {
+      case BuzzState.clientWaitingToLogin:
+        return buildWaitingToLogin();
+      case BuzzState.clientWaitingForCmd:
+        return buildWaitingForCmd();
+      case BuzzState.clientReady:
+        return buildReady();
+      default:
+        return Text('Bug State: $state');
+    }
   }
 
   Widget buildClient() {
@@ -224,7 +237,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     socket!.write(loginMsg);
     */
 
-    setBuzzState(BuzzState.clientWaitingForLoginResponse);
+    setBuzzState(BuzzState.clientWaitingForCmd);
   }
 
   Widget buildWaitingToLogin() {
@@ -341,8 +354,10 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     if (msg.cmd == BuzzCmd.ping) {
       final pong = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {});
       sendMessageToServer(pong);
-    } else if (msg.cmd == BuzzCmd.areYouReady) {
-      setBuzzState(BuzzState.clientAreYouReady);
+    } else if (msg.cmd == BuzzCmd.showBuzz) {
+      setBuzzState(BuzzState.clientReady);
+    } else if (msg.cmd == BuzzCmd.hideBuzz) {
+      setBuzzState(BuzzState.clientWaitingForCmd);
     }
   }
 }
