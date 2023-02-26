@@ -1,3 +1,4 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:buzzer/util/command.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -67,19 +68,53 @@ class WIDGETS {
     );
   }
 
+  static Widget appBarTitle({String name = ""}) {
+    return Text("தெரியுமா? $name",
+        style: const TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Catamaran-VariableFont_wght",
+            color: Colors.white));
+  }
+
+  static Widget yesBuzzerTitle() {
+    return const Text("தெரியும்",
+        style: TextStyle(
+            fontSize: 20, fontFamily: "Coiny-Regular", color: Colors.black));
+  }
+
+  static Widget noBuzzerTitle() {
+    return const Text("தெரியாது",
+        style: TextStyle(
+            fontSize: 18, fontFamily: "Coiny-Regular", color: Colors.white));
+  }
+
+  static Widget buildBuzzer(Widget img, Widget text) {
+    return Center(
+        child: Stack(
+      children: <Widget>[
+        Container(
+          alignment: Alignment.center,
+          child: img,
+        ),
+        Container(alignment: Alignment.center, child: text),
+      ],
+    ));
+  }
+
   static Widget yesBuzzer(onPressed) {
-    final img = assetImage("buzzer-yes.png", width: 240, height: 240);
+    final img = assetImage("green-empty.webp", width: 240, height: 240);
     return IconButton(
-      icon: img,
+      icon: buildBuzzer(img, yesBuzzerTitle()),
       iconSize: 150,
       onPressed: onPressed,
     );
   }
 
   static Widget noBuzzer(onPressed) {
-    final img = assetImage("buzzer-no.png", width: 240, height: 240);
+    final img = assetImage("red-empty.webp", width: 240, height: 240);
     return IconButton(
-      icon: img,
+      icon: buildBuzzer(img, noBuzzerTitle()),
       iconSize: 150,
       onPressed: onPressed,
     );
@@ -113,12 +148,24 @@ class WIDGETS {
     );
   }
 
+  static Widget bellIconButton(onPressed) {
+    return IconButton(
+      icon: const Icon(CupertinoIcons.bell_circle),
+      iconSize: 25,
+      onPressed: onPressed,
+    );
+  }
+
   static Widget buzzedStatus(String buzzedState, int index) {
+    return buzzedStateIcon(buzzedState);
+    /*
     Color textColor = Colors.black;
     if (buzzedState.isEmpty) {
       textColor = Colors.white;
     }
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
       Container(
         decoration: BoxDecoration(
           color: Colors.grey,
@@ -136,5 +183,14 @@ class WIDGETS {
       ),
       buzzedStateIcon(buzzedState)
     ]);
+  */
+  }
+
+  static void playReady() {
+    AssetsAudioPlayer.newPlayer().open(
+      Audio("assets/audio/Theriyuma.mp3"),
+      autoStart: true,
+      showNotification: false,
+    );
   }
 }

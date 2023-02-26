@@ -1,9 +1,40 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
+
 import 'package:buzzer/client/client.dart';
 import 'package:buzzer/score_board/score_board.dart';
 import 'package:buzzer/server/server.dart';
-import 'package:flutter/material.dart';
+import 'package:buzzer/util/widgets.dart';
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  /*
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)
+      .catchError((e) {
+    NLog.log(" Error : ${e.toString()}");
+  });
+  */
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    await windowManager.ensureInitialized();
+
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(500, 900),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      //titleBarStyle: TitleBarStyle.hidden,
+    );
+
+    // Use it only after calling `hiddenWindowAtLaunch`
+    windowManager.waitUntilReadyToShow(windowOptions).then((_) async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
+
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -30,7 +61,7 @@ class MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("BUZZER"),
+        title: WIDGETS.appBarTitle(),
       ),
       body: Center(
         child: Column(

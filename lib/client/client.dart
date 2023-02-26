@@ -1,3 +1,4 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
@@ -20,6 +21,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   BuzzState state = BuzzState.clientWaitingToJoin;
   bool connected = false;
   final userController = TextEditingController();
+  String userName = "";
   List<BuzzMsg> serverMessages = [];
 
   @override
@@ -110,7 +112,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      title: const Text("Client"),
+      title: WIDGETS.appBarTitle(name: userName),
     );
 
     final availableHt =
@@ -181,7 +183,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     if (user.isEmpty) return;
 
     final data = {"user": user};
-
+    setState(() {
+      userName = user;
+    });
     final loginRequest = BuzzMsg(BuzzCmd.client, BuzzCmd.lgq, data);
     sendMessageToServer(loginRequest);
     /*
@@ -254,7 +258,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
   Widget buildReady() {
     return Center(
-        child: Row(
+        child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
@@ -290,6 +294,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.iAmReady, data);
     sendMessageToServer(ping);
     setBuzzState(BuzzState.clientReady);
+    WIDGETS.playReady();
   }
 
   // Process Server messages

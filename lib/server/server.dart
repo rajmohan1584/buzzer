@@ -89,7 +89,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      title: const Text("Server"),
+      title: WIDGETS.appBarTitle(),
     );
 
     final availableHt =
@@ -152,7 +152,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     ]);
 
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+        margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
         elevation: 5.0,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -186,13 +186,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           child: Text(client.user,
               style: const TextStyle(
                   fontSize: 20.0, fontWeight: FontWeight.bold))),
-      Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
+      //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
       Expanded(child: WIDGETS.buzzedStatus(client.buzzedState, index)),
       Expanded(child: ready),
       Expanded(
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           WIDGETS.plusIconButton(() => {}),
           WIDGETS.minusIconButton(() => {}),
+          WIDGETS.bellIconButton(() => sendPingToClient(client)),
         ]),
       ),
       Expanded(

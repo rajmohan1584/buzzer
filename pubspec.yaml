@@ -38,6 +38,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   web_socket_channel: ^2.3.0
   intl: ^0.18.0
+  window_manager: ^0.3.0
+  assets_audio_player: ^3.0.6
   
 dev_dependencies:
   flutter_test:
@@ -91,5 +93,13 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  fonts:
+    - family: Catamaran-VariableFont_wght
+      fonts:
+        - asset: assets/fonts/Catamaran-VariableFont_wght.ttf
+    - family: Coiny-Regular
+      fonts:
+        - asset: assets/fonts/Coiny-Regular.ttf
+
   assets:
     - assets/images/
