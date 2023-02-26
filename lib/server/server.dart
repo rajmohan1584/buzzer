@@ -210,12 +210,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   Widget buildClient(BuzzClient client, int index) {
+    /*
     Color color = COLORS.background["gray"]!;
     if (client.iAmReady) {
       color = COLORS.background["green"]!;
     } else {
       color = COLORS.background["yellow"]!;
     }
+    */
 
     final name = Text(client.user,
         style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
@@ -235,7 +237,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     ]));
 
     return Card(
-        color: color,
         margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
         elevation: 10.0,
         child: Padding(
@@ -301,7 +302,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.nameValue("Total", "$total"),
           WIDGETS.nameValue("Buzzed Yes", "$yes"),
           WIDGETS.nameValue("Buzzed No", "$no"),
-          WIDGETS.nameValue("Penging", "$pending"),
+          WIDGETS.nameValue("Pending", "$pending"),
         ]);
 
     Widget buttons = Row(
@@ -385,6 +386,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void showBuzzerToClient(BuzzClient client) {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
     client.sendMessage(ping);
+    setState(() {
+      client.buzzedState = "";
+    });
   }
 
   void showBuzzerToAllClients() {

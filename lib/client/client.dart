@@ -149,7 +149,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
         children: [name, WIDGETS.nameValue("SCORE", "0")]);
 
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
+        margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
         elevation: 10.0,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -303,12 +303,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   Widget buildReady() {
+    audio();
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
+          const SizedBox(height: 20),
+          WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
+          const SizedBox(height: 20),
           WIDGETS.noBuzzer(onBuzzedNo),
+          const SizedBox(height: 100),
           WIDGETS.yesBuzzer(onBuzzedYes),
         ]));
   }

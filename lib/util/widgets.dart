@@ -67,6 +67,16 @@ class WIDGETS {
     );
   }
 
+  static Widget tamilText(String text, double fontSize,
+      {Color color = Colors.white}) {
+    return Text(text,
+        style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Catamaran-VariableFont_wght",
+            color: color));
+  }
+
   static Widget appBarTitle({String name = ""}) {
     return Text("தெரியுமா? $name",
         style: const TextStyle(
@@ -79,7 +89,7 @@ class WIDGETS {
   static Widget yesBuzzerTitle() {
     return const Text("தெரியும்",
         style: TextStyle(
-            fontSize: 20, fontFamily: "Coiny-Regular", color: Colors.black));
+            fontSize: 30, fontFamily: "Coiny-Regular", color: Colors.black));
   }
 
   static Widget noBuzzerTitle() {
@@ -105,7 +115,7 @@ class WIDGETS {
     final img = assetImage("green-empty.webp", width: 240, height: 240);
     return IconButton(
       icon: buildBuzzer(img, yesBuzzerTitle()),
-      iconSize: 150,
+      iconSize: 200,
       onPressed: onPressed,
     );
   }
@@ -187,6 +197,14 @@ class WIDGETS {
 
   static Widget button(String buttonText, Function() onPressed) {
     return ElevatedButton(onPressed: onPressed, child: Text(buttonText));
+  }
+
+  static Widget clientButton(Function() onPressed) {
+    return ElevatedButton(onPressed: onPressed, child: tamilText("மாணவர்", 20));
+  }
+
+  static Widget serverButton(Function() onPressed) {
+    return ElevatedButton(onPressed: onPressed, child: tamilText("நடுவர்", 20));
   }
 
   static Widget buttonAndDesc(

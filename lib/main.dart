@@ -68,7 +68,7 @@ class MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(onPressed: _onClient, child: const Text("Client")),
+            WIDGETS.clientButton(_onClient),
             const SizedBox(
               height: 20,
             ),
@@ -77,7 +77,7 @@ class MyHomePageState extends State<MyHomePage> {
             const SizedBox(
               height: 20,
             ),
-            ElevatedButton(onPressed: _onServer, child: const Text("Server"))
+            WIDGETS.serverButton(_onServer)
           ],
         ),
       ),
