@@ -18,19 +18,20 @@ class BuzzClientScreen extends StatefulWidget {
 
 class _BuzzClientScreenState extends State<BuzzClientScreen> {
   late Socket? socket;
-  BuzzState state = BuzzState.clientWaitingToJoin;
+  BuzzState state = BuzzState.clientWaitingToLogin;
   bool connected = false;
   final userController = TextEditingController();
   String userName = "";
   List<BuzzMsg> serverMessages = [];
   final audioPlayer = AudioPlayer();
+  String error = "";
 
   @override
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
+    connectToServerAndListen();
     super.initState();
-    audio();
   }
 
   Future audio() async {
@@ -72,10 +73,13 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     return null;
   }
 
-  void connectToServerAndListen() async {
+  Future connectToServerAndListen() async {
     socket = await connectToServer();
 
     if (socket == null) {
+      setState(() {
+        error = "Unable to connect to server";
+      });
       return;
     }
 
@@ -127,8 +131,13 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
     final topPanelHeight = availableHt * 0.15;
     final topPanelWidth = MediaQuery.of(context).size.width;
-    return Scaffold(
-        appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight));
+    return WillPopScope(
+        onWillPop: () async {
+          socket?.close();
+          return true;
+        },
+        child: Scaffold(
+            appBar: appBar, body: buildBody(topPanelWidth, topPanelHeight)));
   }
 
   Widget buildBody(w, h) {
@@ -163,6 +172,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   Widget buildStatus() {
+    if (error.isNotEmpty) {
+      return Center(child: Text(error));
+    }
     switch (state) {
       case BuzzState.clientWaitingToJoin:
         return buildWaitingToJoin();
@@ -185,8 +197,18 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     return WIDGETS.joinButton(connectToServerAndListen);
   }
 
-  void onLogin() {
-    if (!connected) return;
+  void onLogin() async {
+    if (!connected) {
+      await connectToServerAndListen();
+    }
+
+    if (!connected) {
+      setState(() {
+        error = "Socket not connected";
+      });
+      return;
+    }
+
     final user = userController.text;
     if (user.isEmpty) return;
 
@@ -207,17 +229,20 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
   Widget buildWaitingToLogin() {
     return Center(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-          TextField(
-            controller: userController,
-            decoration: const InputDecoration(
-                hintText: 'Name', labelText: 'Enter Name'),
-          ),
-          ElevatedButton(onPressed: onLogin, child: const Text("Login")),
-        ]));
+        child: Padding(
+      padding: const EdgeInsets.all(30.0),
+      child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            TextField(
+              controller: userController,
+              decoration: const InputDecoration(
+                  hintText: 'Name', labelText: 'Enter Name'),
+            ),
+            ElevatedButton(onPressed: onLogin, child: const Text("Join")),
+          ]),
+    ));
   }
 
   Widget buildWaitingForLoginResponse() {

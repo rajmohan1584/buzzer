@@ -49,7 +49,7 @@ class WIDGETS {
             child: ClipOval(child: img)));
   }
 
-  static Widget redBuzzer(onPressed) {
+  static Widget redBuzzer(Function() onPressed) {
     final img = assetImage("buzzer.png", width: 240, height: 240);
     return IconButton(
       icon: img,
@@ -101,7 +101,7 @@ class WIDGETS {
     ));
   }
 
-  static Widget yesBuzzer(onPressed) {
+  static Widget yesBuzzer(Function() onPressed) {
     final img = assetImage("green-empty.webp", width: 240, height: 240);
     return IconButton(
       icon: buildBuzzer(img, yesBuzzerTitle()),
@@ -110,7 +110,7 @@ class WIDGETS {
     );
   }
 
-  static Widget noBuzzer(onPressed) {
+  static Widget noBuzzer(Function() onPressed) {
     final img = assetImage("red-empty.webp", width: 240, height: 240);
     return IconButton(
       icon: buildBuzzer(img, noBuzzerTitle()),
@@ -131,7 +131,7 @@ class WIDGETS {
     );
   }
 
-  static Widget plusIconButton(onPressed) {
+  static Widget plusIconButton(Function() onPressed) {
     return IconButton(
       icon: const Icon(CupertinoIcons.add_circled),
       iconSize: 25,
@@ -139,7 +139,7 @@ class WIDGETS {
     );
   }
 
-  static Widget minusIconButton(onPressed) {
+  static Widget minusIconButton(Function() onPressed) {
     return IconButton(
       icon: const Icon(CupertinoIcons.minus_circled),
       iconSize: 25,
@@ -147,7 +147,7 @@ class WIDGETS {
     );
   }
 
-  static Widget bellIconButton(onPressed) {
+  static Widget bellIconButton(Function() onPressed) {
     return IconButton(
       icon: const Icon(CupertinoIcons.bell_circle),
       iconSize: 25,
@@ -183,5 +183,21 @@ class WIDGETS {
       buzzedStateIcon(buzzedState)
     ]);
   */
+  }
+
+  static Widget button(String buttonText, Function() onPressed) {
+    return ElevatedButton(onPressed: onPressed, child: Text(buttonText));
+  }
+
+  static Widget buttonAndDesc(
+      String buttonText, Function() onPressed, String descText) {
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ElevatedButton(onPressed: onPressed, child: Text(buttonText)),
+          const SizedBox(width: 10),
+          Text(descText)
+        ]);
   }
 }

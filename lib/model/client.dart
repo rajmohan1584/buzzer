@@ -28,6 +28,23 @@ class BuzzClients {
 
   int get length => clients.length;
 
+//  (int total, int yes, int no, int pending) get counts {
+  List<int> get counts {
+    final int total = clients.length;
+    int yes = 0, no = 0, pending = 0;
+    for (var c in clients) {
+      if (c.buzzedState == BuzzCmd.buzzYes) {
+        yes++;
+      } else if (c.buzzedState == BuzzCmd.buzzNo) {
+        no++;
+      } else {
+        pending++;
+      }
+    }
+
+    return [total, yes, no, pending];
+  }
+
   operator [](int i) => clients[i];
 
   BuzzClient? findByUser(String user) {

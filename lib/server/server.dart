@@ -26,6 +26,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   void initState() {
     Log.log('Server InitState');
+    createServerAndListen();
     super.initState();
   }
 
@@ -262,7 +263,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     return WIDGETS.createServerButton(createServerAndListen);
   }
 
-  Widget handleServerWaitingForClients() {
+  Widget handleServerWaitingForClients0() {
     Widget actions = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -284,6 +285,51 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           const SizedBox(height: 20),
           actions,
         ]));
+//    return const Center(child: Text("Connected. Waiting for Clients"));
+  }
+
+  Widget handleServerWaitingForClients() {
+    final counts = clients.counts;
+    final total = counts[0],
+        yes = counts[1],
+        no = counts[2],
+        pending = counts[3];
+    Widget status = Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          WIDGETS.nameValue("Total", "$total"),
+          WIDGETS.nameValue("Buzzed Yes", "$yes"),
+          WIDGETS.nameValue("Buzzed No", "$no"),
+          WIDGETS.nameValue("Penging", "$pending"),
+        ]);
+
+    Widget buttons = Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          WIDGETS.button("Show Buzzer", showBuzzerToAllClients),
+          WIDGETS.button("Hide Buzzer", hideBuzzerToAllClients),
+          WIDGETS.button("PING", sendPingToAllClients),
+        ]);
+
+    final child = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          status,
+          const SizedBox(height: 15),
+          buttons,
+        ]);
+
+    return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
+        elevation: 10.0,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: child,
+        ));
+
 //    return const Center(child: Text("Connected. Waiting for Clients"));
   }
 
@@ -333,6 +379,30 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     setState(() {
       clients.remove(client);
     });
+  }
+
+  //
+  void showBuzzerToClient(BuzzClient client) {
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
+    client.sendMessage(ping);
+  }
+
+  void showBuzzerToAllClients() {
+    for (var i = 0; i < clients.length; i++) {
+      showBuzzerToClient(clients[i]);
+    }
+  }
+
+  //
+  void hideBuzzerToClient(BuzzClient client) {
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {});
+    client.sendMessage(ping);
+  }
+
+  void hideBuzzerToAllClients() {
+    for (var i = 0; i < clients.length; i++) {
+      hideBuzzerToClient(clients[i]);
+    }
   }
 
   //
