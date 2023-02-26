@@ -64,8 +64,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
   Future<Socket?> connectToServer() async {
     Log.log('');
-    final ip = InternetAddress.anyIPv4;
+    //final ip = InternetAddress.anyIPv4;
     //final ip = CONST.iPhoneIp;
+    const ip = "localhost";
     const port = 5678;
     try {
       Log.log('Connecting to server: $ip: $port');

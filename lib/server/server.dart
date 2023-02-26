@@ -33,8 +33,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   void createServerAndListen() async {
     Log.log('Creating server');
-    final ip = InternetAddress.anyIPv4;
+    //final ip = InternetAddress.anyIPv4;
     //final ip = CONST.iPhoneIp;
+    const ip = 'localhost';
     const port = 5678;
     server = await ServerSocket.bind(ip, port);
     Log.log('Server created: ${server.address.address}: ${server.port}');
