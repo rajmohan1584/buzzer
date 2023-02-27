@@ -1,6 +1,7 @@
 import 'package:buzzer/util/command.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinbox/flutter_spinbox.dart';
 
 class WIDGETS {
   static Image assetImage(String file,
@@ -217,5 +218,32 @@ class WIDGETS {
           const SizedBox(width: 10),
           Text(descText)
         ]);
+  }
+
+  static Widget switchRowWithInput(
+      String text,
+      bool switchValue,
+      void Function(bool) onSwitchChanged,
+      double inputValue,
+      void Function(double) onInputChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(text),
+        CupertinoSwitch(value: switchValue, onChanged: onSwitchChanged),
+        SizedBox(
+          width: 150,
+          height: 150,
+          child: CupertinoSpinBox(
+            min: 1,
+            max: 60,
+            value: inputValue,
+            direction: Axis.horizontal,
+            onChanged: onInputChanged,
+          ),
+        )
+      ],
+    );
   }
 }

@@ -23,6 +23,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   BuzzState state = BuzzState.serverWaitingForClients;
   late final ServerSocket server;
   bool created = false;
+  bool enableTimeout = true;
+  double timeoutSeconds = 10;
 
   @override
   void initState() {
@@ -98,7 +100,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     final availableHt =
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
-    final topPanelHeight = availableHt * 0.75;
+    final topPanelHeight = availableHt * 0.5;
     final topPanelWidth = MediaQuery.of(context).size.width;
 
     return WillPopScope(
@@ -297,6 +299,18 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 //    return const Center(child: Text("Connected. Waiting for Clients"));
   }
 
+  void onChangeEnableTimeout(bool enable) {
+    setState(() {
+      enableTimeout = enable;
+    });
+  }
+
+  void onTimeoutSecondsChange(double timeout) {
+    setState(() {
+      timeoutSeconds = timeout;
+    });
+  }
+
   Widget handleServerWaitingForClients() {
     final counts = clients.counts;
     final total = counts[0],
@@ -322,6 +336,25 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.button("PING", sendPingToAllClients),
         ]);
 
+    Widget timout = WIDGETS.switchRowWithInput(
+        "Hide Buzzer after set seconds",
+        enableTimeout,
+        onChangeEnableTimeout,
+        timeoutSeconds,
+        onTimeoutSecondsChange);
+    /*
+    Widget options = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          WIDGETS.switchRowWithInput(
+              "Hide Buzzer after set seconds",
+              enableTimeout,
+              onChangeEnableTimeout,
+              timeoutSeconds,
+              onTimeoutSecondsChange)
+        ]);
+    */
     final child = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -329,6 +362,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           status,
           const SizedBox(height: 15),
           buttons,
+          const SizedBox(height: 15),
+          timout
         ]);
 
     return Card(
