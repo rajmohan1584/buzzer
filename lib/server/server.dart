@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:buzzer/util/buzz_state.dart';
 //import 'package:buzzer/util/constants.dart';
 //import 'package:buzzer/util/colors.dart';
 import 'package:buzzer/util/widgets.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -25,12 +28,51 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   bool created = false;
   bool enableTimeout = true;
   double timeoutSeconds = 10;
+  double roundSecondsRemaining = 10;
+  bool roundStarted = false;
+  late DateTime roundStartTime;
+  Timer? roundTimer;
 
   @override
   void initState() {
     Log.log('Server InitState');
     createServerAndListen();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    stopRoundTimer();
+    super.dispose();
+  }
+
+  startRoundTimer() {
+    stopRoundTimer();
+    const dur = Duration(seconds: 1);
+    roundTimer = Timer.periodic(dur, onRoundTimer);
+    setState(() {
+      roundStartTime = DateTime.now();
+      roundSecondsRemaining = timeoutSeconds;
+      Log.log('startRoundTimer remaining:$roundSecondsRemaining');
+    });
+    onRoundTimer(roundTimer);
+  }
+
+  onRoundTimer(_) {
+    final now = DateTime.now();
+    final duration = now.difference(roundStartTime);
+    Log.log('onRoundTimer duration:${duration.inMilliseconds}');
+    setState(() {
+      roundSecondsRemaining = timeoutSeconds - duration.inSeconds;
+      Log.log('onRoundTimer remaining:$roundSecondsRemaining');
+      if (roundSecondsRemaining <= 0) {
+        onStopRound();
+      }
+    });
+  }
+
+  stopRoundTimer() {
+    roundTimer?.cancel();
   }
 
   void createServerAndListen() async {
@@ -143,82 +185,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     );
   }
 
-  Widget buildClient0(BuzzClient client) {
-    Widget titleRow =
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(client.user,
-          style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-      Text('${client.socket.remotePort}'),
-    ]);
-
-    Widget actionRow =
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(client.serverMsg?.toString() ?? '',
-          style: const TextStyle(fontSize: 20.0)),
-      ElevatedButton(
-        onPressed: () {
-          sendPingToClient(client);
-        },
-        child: const Text("PING"),
-      )
-    ]);
-
-    return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-        elevation: 5.0,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [titleRow, actionRow],
-          ),
-        ));
-  }
-
-  Widget buildClient1(BuzzClient client, int index) {
-    Widget ready;
-    if (client.iAmReady) {
-      ready = const Text("READY",
-          style: TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.green));
-    } else {
-      ready = const Text("WAITING",
-          style: TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.redAccent));
-    }
-    Widget row = IntrinsicWidth(
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Expanded(
-          child: Text(client.user,
-              style: const TextStyle(
-                  fontSize: 20.0, fontWeight: FontWeight.bold))),
-      //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
-      Expanded(child: WIDGETS.buzzedStatus(client.buzzedState, index)),
-      Expanded(child: ready),
-      Expanded(
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          WIDGETS.plusIconButton(() => {}),
-          WIDGETS.minusIconButton(() => {}),
-          WIDGETS.bellIconButton(() => sendPingToClient(client)),
-        ]),
-      ),
-    ]));
-
-    return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
-        elevation: 5.0,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: row,
-        ));
-  }
-
   Widget buildClient(BuzzClient client, int index) {
     /*
     Color color = COLORS.background["gray"]!;
@@ -311,6 +277,46 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
   }
 
+  void onStartRound() {
+    setState(() {
+      roundStarted = true;
+    });
+    showBuzzerToAllClients();
+    startRoundTimer();
+  }
+
+  void onStopRound() {
+    setState(() {
+      roundStarted = false;
+    });
+    stopRoundTimer();
+    hideBuzzerToAllClients();
+    //sendTopBuzzersToAllClients();
+  }
+
+  Widget buildStartStop() {
+    int groupValue = roundStarted ? 0 : 1;
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(10),
+      child: CupertinoSlidingSegmentedControl<int>(
+        padding: const EdgeInsets.all(8),
+        groupValue: groupValue,
+        children: const {
+          0: Text("Start Round"),
+          1: Text("Stop Round"),
+        },
+        onValueChanged: (value) {
+          if (value == 0) {
+            onStartRound();
+          } else {
+            onStopRound();
+          }
+        },
+      ),
+    );
+  }
+
   Widget handleServerWaitingForClients() {
     final counts = clients.counts;
     final total = counts[0],
@@ -331,8 +337,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          WIDGETS.button("Show Buzzer", showBuzzerToAllClients),
-          WIDGETS.button("Hide Buzzer", hideBuzzerToAllClients),
+          buildStartStop(),
+          //WIDGETS.button("Show Buzzer", showBuzzerToAllClients),
+          //WIDGETS.button("Hide Buzzer", hideBuzzerToAllClients),
           WIDGETS.button("PING", sendPingToAllClients),
         ]);
 
