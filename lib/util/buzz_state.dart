@@ -1,5 +1,6 @@
 enum BuzzState {
   // Client
+  clientWaitingForServer,
   clientWaitingToJoin,
   clientWaitingToLogin,
   clientWaitingForLoginResponse,

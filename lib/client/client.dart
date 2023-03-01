@@ -21,8 +21,8 @@ class BuzzClientScreen extends StatefulWidget {
 }
 
 class _BuzzClientScreenState extends State<BuzzClientScreen> {
-  late IO.Socket? socket;
-  BuzzState state = BuzzState.clientWaitingToLogin;
+  late IO.Socket socket;
+  BuzzState state = BuzzState.clientWaitingForServer;
   bool connected = false;
   final userController = TextEditingController();
   String userName = "";
@@ -57,49 +57,47 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   void sendMessageToServer(BuzzMsg msg) {
-    if (socket == null) {
-      Log.log("error");
-    } else {
-      String s = msg.toSocketMsg();
-      Log.log("sendMessageToServer: $s");
-      socket!.emit('msg', s);
-    }
+    String s = msg.toSocketMsg();
+    Log.log("sendMessageToServer: $s");
+    socket.emit('msg', s);
   }
 
   void connectToServer() {
     const ip = "localhost";
     const port = 5678;
     const url = 'http://$ip:$port';
-    socket = IO.io(url);
+    Log.log('Connecting to server: $url');
+    socket = IO.io(
+        url,
+        OptionBuilder()
+            .setTransports(['websocket']) // for Flutter or Dart VM
+            .disableAutoConnect() // disable auto-connection
+            .setExtraHeaders({'foo': 'bar'}) // optional
+            .build());
+    socket.connect();
   }
 
   void connectToServerAndListen() {
     connectToServer();
-    if (!socket!.connected) {
-      setState(() {
-        error = "Unable to connect to server";
-      });
-      return;
-    }
-
-    socket!.on('connect', (_) {
+    socket.on('connect', (_) {
+      Log.log('Connected to server');
       setState(() => connected = true);
       setBuzzState(BuzzState.clientWaitingToLogin);
     });
-    socket!.on('disconnect', (_) {
-      Log.log('Server left.');
-      socket!.destroy();
+    socket.on('disconnect', (_) {
+      Log.log('Disconnected from server');
+      socket.destroy();
       setState(() => connected = false);
       setBuzzState(BuzzState.clientWaitingToJoin);
     });
-    socket!.on('msg', (data) {
+    socket.on('msg', (data) {
       final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
       if (msg == null) {
         Log.log('error');
         return;
       }
 
-      handleServerMessage(socket!, msg);
+      handleServerMessage(socket, msg);
     });
   }
   /*
@@ -174,7 +172,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
     return WillPopScope(
         onWillPop: () async {
-          socket?.close();
+          socket.close();
           return true;
         },
         child: Scaffold(appBar: appBar, body: buildBody()));
@@ -207,6 +205,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       return Center(child: Text(error));
     }
     switch (state) {
+      case BuzzState.clientWaitingForServer:
+        return clientWaitingForServer();
       case BuzzState.clientWaitingToLogin:
         return buildWaitingToLogin();
       case BuzzState.clientWaitingForCmd:
@@ -218,41 +218,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     }
   }
 
-  Widget buildClient() {
-    return ListView.builder(
-      itemCount: serverMessages.length,
-      itemBuilder: (context, int index) {
-        String msg = serverMessages[index].toString();
-        // todo - call buildServer
-        return Text(msg, style: const TextStyle(fontSize: 20));
-      },
-    );
-  }
-
-  Widget buildStatus() {
-    if (error.isNotEmpty) {
-      return Center(child: Text(error));
-    }
-    switch (state) {
-      case BuzzState.clientWaitingToJoin:
-        return buildWaitingToJoin();
-      case BuzzState.clientWaitingToLogin:
-        return buildWaitingToLogin();
-      case BuzzState.clientWaitingForLoginResponse:
-        return buildWaitingForLoginResponse();
-      case BuzzState.clientWaitingForCmd:
-        return buildWaitingForCmd();
-      case BuzzState.clientAreYouReady:
-        return buildAreYouReady();
-      case BuzzState.clientReady:
-        return buildReady();
-      default:
-        return Text('Bug State: $state');
-    }
-  }
-
-  Widget buildWaitingToJoin() {
-    return WIDGETS.joinButton(connectToServerAndListen);
+  Widget clientWaitingForServer() {
+    return const Center(child: Text("Waiting for Server"));
+    //return WIDGETS.joinButton(connectToServerAndListen);
   }
 
   void onLogin() async {
