@@ -1,4 +1,5 @@
 import 'package:buzzer/util/command.dart';
+import 'package:buzzer/util/format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinbox/flutter_spinbox.dart';
@@ -244,6 +245,14 @@ class WIDGETS {
           ),
         )
       ],
+    );
+  }
+
+  static Widget buildCountdownTime(double sec) {
+    final Color color = sec > 5 ? Colors.black : Colors.red;
+    return Text(
+      FMT.sec(sec),
+      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: color),
     );
   }
 }

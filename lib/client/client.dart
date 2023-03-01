@@ -26,6 +26,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   List<BuzzMsg> serverMessages = [];
   final audioPlayer = AudioPlayer();
   String error = "";
+  double secondsRemaining = 0;
 
   @override
   void initState() {
@@ -122,7 +123,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
     setState(() => connected = true);
     setBuzzState(BuzzState.clientWaitingToLogin);
-    socket!.write("Hello from Client");
   }
 
   @override
@@ -307,14 +307,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   Widget buildReady() {
-    audio();
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
           const SizedBox(height: 20),
-          WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
+            const SizedBox(height: 30),
+            WIDGETS.buildCountdownTime(secondsRemaining)
+          ]),
           const SizedBox(height: 20),
           WIDGETS.noBuzzer(onBuzzedNo),
           const SizedBox(height: 100),
@@ -365,8 +368,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       sendMessageToServer(pong);
     } else if (msg.cmd == BuzzCmd.showBuzz) {
       setBuzzState(BuzzState.clientReady);
+      audio();
     } else if (msg.cmd == BuzzCmd.hideBuzz) {
       setBuzzState(BuzzState.clientWaitingForCmd);
+    } else if (msg.cmd == BuzzCmd.countdown) {
+      double sec = msg.data["sec"] ?? 0;
+      setState(() {
+        secondsRemaining = sec;
+      });
     }
   }
 }

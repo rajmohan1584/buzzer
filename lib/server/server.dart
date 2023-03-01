@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/format.dart';
 //import 'package:buzzer/util/constants.dart';
 //import 'package:buzzer/util/colors.dart';
 import 'package:buzzer/util/widgets.dart';
@@ -61,7 +62,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   onRoundTimer(_) {
     final now = DateTime.now();
     final duration = now.difference(roundStartTime);
-    Log.log('onRoundTimer duration:${duration.inMilliseconds}');
     setState(() {
       roundSecondsRemaining = timeoutSeconds - duration.inSeconds;
       Log.log('onRoundTimer remaining:$roundSecondsRemaining');
@@ -69,6 +69,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         onStopRound();
       }
     });
+    sendCountdownToAllClients();
   }
 
   stopRoundTimer() {
@@ -290,6 +291,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       roundStarted = false;
     });
     stopRoundTimer();
+    sendCountdownToAllClients();
     hideBuzzerToAllClients();
     //sendTopBuzzersToAllClients();
   }
@@ -338,6 +340,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           buildStartStop(),
+          WIDGETS.buildCountdownTime(roundSecondsRemaining),
           //WIDGETS.button("Show Buzzer", showBuzzerToAllClients),
           //WIDGETS.button("Hide Buzzer", hideBuzzerToAllClients),
           WIDGETS.button("PING", sendPingToAllClients),
@@ -468,6 +471,20 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void sendPingToAllClients() {
     for (var i = 0; i < clients.length; i++) {
       sendPingToClient(clients[i]);
+    }
+  }
+
+  //
+  void sendCountdownToClient(BuzzClient client) {
+    final data = {"sec": roundSecondsRemaining};
+
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data);
+    client.sendMessage(ping);
+  }
+
+  void sendCountdownToAllClients() {
+    for (var i = 0; i < clients.length; i++) {
+      sendCountdownToClient(clients[i]);
     }
   }
 
