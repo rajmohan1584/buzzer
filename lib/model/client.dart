@@ -1,9 +1,10 @@
-import 'dart:io';
+//import 'dart:io';
 
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/command.dart';
 import 'package:buzzer/util/log.dart';
+import 'package:socket_io/socket_io.dart';
 
 class BuzzClient {
   String user;
@@ -19,7 +20,8 @@ class BuzzClient {
   void sendMessage(BuzzMsg msg) {
     String s = msg.toSocketMsg();
     Log.log("sendMessage: $s");
-    socket.write(s);
+    //socket.write(s);
+    socket.emit('msg', s);
   }
 }
 

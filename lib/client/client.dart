@@ -7,6 +7,7 @@ import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:socket_io/socket_io.dart';
 
 import '../util/command.dart';
 

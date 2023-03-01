@@ -1,15 +1,11 @@
 import 'dart:async';
 
 import 'package:buzzer/util/buzz_state.dart';
-import 'package:buzzer/util/format.dart';
-//import 'package:buzzer/util/constants.dart';
-//import 'package:buzzer/util/colors.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:buzzer/util/log.dart';
+import 'package:socket_io/socket_io.dart';
 
 import '../model/client.dart';
 import '../model/message.dart';
@@ -25,7 +21,7 @@ class BuzzServerScreen extends StatefulWidget {
 class _BuzzServerScreenState extends State<BuzzServerScreen> {
   final BuzzClients clients = BuzzClients();
   BuzzState state = BuzzState.serverWaitingForClients;
-  late final ServerSocket server;
+  late final Server server;
   bool created = false;
   bool enableTimeout = true;
   double timeoutSeconds = 10;
@@ -76,6 +72,46 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     roundTimer?.cancel();
   }
 
+  void createServerAndListen() {
+    const port = 5678;
+    final io = Server(server: port);
+    io.on('connection', (client) {
+      handleNewConnection(client);
+    });
+  }
+
+  void handleNewConnection(Socket client) {
+    Log.log('New Connection');
+    Log.log('Connection from ${client.id}');
+
+    setState(() {
+      BuzzClient? c = clients.add("Unknown", client);
+      if (c != null) {
+        c.created = DateTime.now();
+        c.updated = DateTime.now();
+        c.state = BuzzState.clientWaitingToLogin;
+      }
+    });
+
+    client.on('disconnect', (_) {
+      Log.log('Client left (disconnect)');
+      handleCloseClient(client);
+    });
+    client.on('close', (_) {
+      Log.log('Client left (close)');
+      handleCloseClient(client);
+    });
+    client.on('msg', (data) {
+      final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
+      if (msg == null) {
+        Log.log("error");
+        return;
+      }
+      handleClientMessage(client, msg);
+    });
+  }
+
+  /*
   void createServerAndListen() async {
     Log.log('Creating server');
     //final ip = InternetAddress.anyIPv4;
@@ -134,6 +170,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       },
     );
   }
+  */
 
   @override
   Widget build(BuildContext context) {
