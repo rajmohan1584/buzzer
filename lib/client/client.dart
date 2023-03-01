@@ -5,9 +5,11 @@ import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/widgets.dart';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:socket_io/socket_io.dart';
+//import 'dart:io';
+//import 'dart:typed_data';
+// ignore: library_prefixes
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart';
 
 import '../util/command.dart';
 
@@ -19,7 +21,7 @@ class BuzzClientScreen extends StatefulWidget {
 }
 
 class _BuzzClientScreenState extends State<BuzzClientScreen> {
-  late Socket? socket;
+  late IO.Socket? socket;
   BuzzState state = BuzzState.clientWaitingToLogin;
   bool connected = false;
   final userController = TextEditingController();
@@ -60,10 +62,47 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     } else {
       String s = msg.toSocketMsg();
       Log.log("sendMessageToServer: $s");
-      socket!.write(s);
+      socket!.emit('msg', s);
     }
   }
 
+  void connectToServer() {
+    const ip = "localhost";
+    const port = 5678;
+    const url = 'http://$ip:$port';
+    socket = IO.io(url);
+  }
+
+  void connectToServerAndListen() {
+    connectToServer();
+    if (!socket!.connected) {
+      setState(() {
+        error = "Unable to connect to server";
+      });
+      return;
+    }
+
+    socket!.on('connect', (_) {
+      setState(() => connected = true);
+      setBuzzState(BuzzState.clientWaitingToLogin);
+    });
+    socket!.on('disconnect', (_) {
+      Log.log('Server left.');
+      socket!.destroy();
+      setState(() => connected = false);
+      setBuzzState(BuzzState.clientWaitingToJoin);
+    });
+    socket!.on('msg', (data) {
+      final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
+      if (msg == null) {
+        Log.log('error');
+        return;
+      }
+
+      handleServerMessage(socket!, msg);
+    });
+  }
+  /*
   Future<Socket?> connectToServer() async {
     Log.log('');
     //final ip = InternetAddress.anyIPv4;
@@ -125,6 +164,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     setState(() => connected = true);
     setBuzzState(BuzzState.clientWaitingToLogin);
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +257,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
 
   void onLogin() async {
     if (!connected) {
-      await connectToServerAndListen();
+      connectToServerAndListen();
     }
 
     if (!connected) {
