@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:audioplayers/audioplayers.dart';
 //import 'package:buzzer/util/constants.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +12,6 @@ import 'package:buzzer/util/widgets.dart';
 //import 'dart:typed_data';
 // ignore: library_prefixes
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:socket_io_client/socket_io_client.dart';
 
 import '../util/command.dart';
 
@@ -59,26 +61,36 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   void sendMessageToServer(BuzzMsg msg) {
     String s = msg.toSocketMsg();
     Log.log("sendMessageToServer: $s");
-    socket.emit('msg', s);
+//    List<int> list = utf8.encode(s);
+//    Uint8List bytes = Uint8List.fromList(list);
+    socket.emit('msg', [s]);
   }
 
   void connectToServer() {
     const ip = "localhost";
-    const port = 5678;
+    const port = 3000;
     const url = 'http://$ip:$port';
+
     Log.log('Connecting to server: $url');
+
+    //socket = IO.io(url);
+
     socket = IO.io(
         url,
-        OptionBuilder()
+        IO.OptionBuilder()
             .setTransports(['websocket']) // for Flutter or Dart VM
             .disableAutoConnect() // disable auto-connection
-            .setExtraHeaders({'foo': 'bar'}) // optional
             .build());
     socket.connect();
   }
 
   void connectToServerAndListen() {
     connectToServer();
+    socket.onConnect((data) {
+      Log.log('Connected to server');
+      setState(() => connected = true);
+      setBuzzState(BuzzState.clientWaitingToLogin);
+    });
     socket.on('connect', (_) {
       Log.log('Connected to server');
       setState(() => connected = true);
@@ -91,13 +103,16 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       setBuzzState(BuzzState.clientWaitingToJoin);
     });
     socket.on('msg', (data) {
-      final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
+      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
       if (msg == null) {
         Log.log('error');
         return;
       }
 
       handleServerMessage(socket, msg);
+    });
+    socket.on('event', (data) {
+      Log.log('Client event: $data');
     });
   }
   /*
@@ -365,7 +380,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   }
 
   // Process Server messages
-  void handleServerMessage(Socket socket, BuzzMsg msg) {
+  void handleServerMessage(IO.Socket socket, BuzzMsg msg) {
     Log.log('From Server: ${msg.toSocketMsg()}');
 
     setState(() {

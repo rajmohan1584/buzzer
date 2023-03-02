@@ -1,5 +1,8 @@
 //import 'dart:io';
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/command.dart';
@@ -21,7 +24,9 @@ class BuzzClient {
     String s = msg.toSocketMsg();
     Log.log("sendMessage: $s");
     //socket.write(s);
-    socket.emit('msg', s);
+    //List<int> list = utf8.encode(s);
+    //Uint8List bytes = Uint8List.fromList(list);
+    socket.emit('msg', [s]);
   }
 }
 

@@ -27,6 +27,10 @@ class BuzzMsg {
 
   static BuzzMsg? fromSocketMsg(Uint8List rawData) {
     final msg = String.fromCharCodes(rawData);
+    return fromSocketIOMsg(msg);
+  }
+
+  static BuzzMsg? fromSocketIOMsg(String msg) {
     if (msg.isEmpty) return null;
     final List<String> a = msg.split('~');
     if (a.length < 3) return null;

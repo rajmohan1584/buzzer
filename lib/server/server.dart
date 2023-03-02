@@ -73,11 +73,16 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   void createServerAndListen() {
-    const port = 5678;
-    final io = Server(server: port);
-    io.on('connection', (client) {
+    const ip = "localhost";
+    const port = 3000;
+    const url = 'http://$ip:$port';
+
+    Log.log('Creating server: $url');
+    server = Server();
+    server.on('connection', (client) {
       handleNewConnection(client);
     });
+    server.listen(port);
   }
 
   void handleNewConnection(Socket client) {
@@ -102,7 +107,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       handleCloseClient(client);
     });
     client.on('msg', (data) {
-      final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
+      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
       if (msg == null) {
         Log.log("error");
         return;
