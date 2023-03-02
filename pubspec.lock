@@ -377,10 +377,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_io_client
-      sha256: "64bd271703db3682d4195dd813c555413d21a49bbaef7c3ed38932fd2a209a10"
+      sha256: "9b87fb3f14637062eace0222e99dc65dfab64ca40faa2e595345b9c5f0616b94"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.1"
   socket_io_common:
     dependency: transitive
     description:

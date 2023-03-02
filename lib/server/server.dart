@@ -107,6 +107,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       handleCloseClient(client);
     });
     client.on('msg', (data) {
+      Log.log('Server reveived msg: $data');
       final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
       if (msg == null) {
         Log.log("error");
@@ -478,30 +479,53 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   //
+  void sendMessageToAllClients(BuzzMsg msg) {
+    String s = msg.toSocketMsg();
+    Log.log("sendMessage: $s");
+    //socket.write(s);
+    //List<int> list = utf8.encode(s);
+    //Uint8List bytes = Uint8List.fromList(list);
+    server.emit('msg', [s]);
+  }
+
+  //
   void showBuzzerToClient(BuzzClient client) {
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
-    client.sendMessage(ping);
+    final showBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
+    client.sendMessage(showBuzz);
     setState(() {
       client.buzzedState = "";
     });
   }
 
   void showBuzzerToAllClients() {
+    /*
     for (var i = 0; i < clients.length; i++) {
       showBuzzerToClient(clients[i]);
     }
+    */
+    for (var i = 0; i < clients.length; i++) {
+      setState(() {
+        clients[i].buzzedState = "";
+      });
+    }
+    final showBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
+    sendMessageToAllClients(showBuzz);
   }
 
   //
   void hideBuzzerToClient(BuzzClient client) {
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {});
-    client.sendMessage(ping);
+    final hideBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {});
+    client.sendMessage(hideBuzz);
   }
 
   void hideBuzzerToAllClients() {
+    /*
     for (var i = 0; i < clients.length; i++) {
       hideBuzzerToClient(clients[i]);
     }
+    */
+    final hideBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {});
+    sendMessageToAllClients(hideBuzz);
   }
 
   //
@@ -511,29 +535,38 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   void sendPingToAllClients() {
+    /*
     for (var i = 0; i < clients.length; i++) {
       sendPingToClient(clients[i]);
     }
+    */
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {});
+    sendMessageToAllClients(ping);
   }
 
   //
   void sendCountdownToClient(BuzzClient client) {
     final data = {"sec": roundSecondsRemaining};
+    final countdown = BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data);
 
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data);
-    client.sendMessage(ping);
+    client.sendMessage(countdown);
   }
 
   void sendCountdownToAllClients() {
+    /*
     for (var i = 0; i < clients.length; i++) {
       sendCountdownToClient(clients[i]);
     }
+    */
+    final data = {"sec": roundSecondsRemaining};
+    final countdown = BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data);
+    sendMessageToAllClients(countdown);
   }
 
   //
   void sendAreYouReadyToClient(BuzzClient client) {
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.areYouReady, {});
-    client.sendMessage(ping);
+    final areYouReady = BuzzMsg(BuzzCmd.server, BuzzCmd.areYouReady, {});
+    client.sendMessage(areYouReady);
     setState(() {
       client.buzzedState = "";
       client.iAmReady = false;

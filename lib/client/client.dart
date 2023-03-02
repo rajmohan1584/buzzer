@@ -103,7 +103,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       setBuzzState(BuzzState.clientWaitingToJoin);
     });
     socket.on('msg', (data) {
-      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
+      Log.log('Client reveived msg: $data');
+      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data[0]);
       if (msg == null) {
         Log.log('error');
         return;
@@ -112,7 +113,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
       handleServerMessage(socket, msg);
     });
     socket.on('event', (data) {
-      Log.log('Client event: $data');
+      Log.log('Client reveiced event: $data');
     });
   }
   /*
