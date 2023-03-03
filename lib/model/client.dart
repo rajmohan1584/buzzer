@@ -14,6 +14,8 @@ class BuzzClient {
   bool iAmReady = false;
   String buzzedState = "";
   final Socket socket;
+  bool bellRinging = false;
+  bool bellFlashing = false;
   DateTime created = DateTime.now();
   DateTime updated = DateTime.now();
   BuzzState state = BuzzState.clientWaitingToJoin;

@@ -2,6 +2,7 @@ import 'package:buzzer/util/command.dart';
 import 'package:buzzer/util/format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_shake_animated/flutter_shake_animated.dart';
 import 'package:flutter_spinbox/flutter_spinbox.dart';
 
 class WIDGETS {
@@ -159,12 +160,23 @@ class WIDGETS {
     );
   }
 
-  static Widget bellIconButton(Function() onPressed) {
-    return IconButton(
+  static Widget bellIconButton(Function() onPressed,
+      {bool hShake = false, bool vShake = false}) {
+    Widget w = IconButton(
       icon: const Icon(CupertinoIcons.bell_circle),
       iconSize: 25,
       onPressed: onPressed,
     );
+
+    if (!hShake && !vShake) return w;
+
+    ShakeConstant shakeConstant =
+        hShake ? ShakeHorizontalConstant2() : ShakeVerticalConstant1();
+    return ShakeWidget(
+        shakeConstant: shakeConstant,
+        autoPlay: true,
+        enableWebMouseHover: false,
+        child: w);
   }
 
   static Widget buzzedStatus(String buzzedState, int index) {

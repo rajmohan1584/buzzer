@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
@@ -29,6 +30,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   bool roundStarted = false;
   late DateTime roundStartTime;
   Timer? roundTimer;
+  final audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -40,7 +42,33 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   void dispose() {
     stopRoundTimer();
+    audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future ringBell(BuzzClient c) async {
+    AssetSource src = AssetSource("audio/bell.mp3");
+    await audioPlayer.play(src);
+
+    setState(() {
+      c.bellRinging = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        c.bellRinging = false;
+      });
+    });
+  }
+
+  void flashBell(BuzzClient c) {
+    setState(() {
+      c.bellFlashing = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        c.bellFlashing = false;
+      });
+    });
   }
 
   startRoundTimer() {
@@ -251,7 +279,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           WIDGETS.plusIconButton(() => {}),
           WIDGETS.minusIconButton(() => {}),
-          WIDGETS.bellIconButton(() => sendPingToClient(client)),
+          WIDGETS.bellIconButton(() => sendPingToClient(client),
+              hShake: client.bellRinging, vShake: client.bellFlashing),
         ]),
       ),
     ]));
@@ -453,8 +482,11 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         final lgr = BuzzMsg(BuzzCmd.server, BuzzCmd.lgr, {});
         c.sendMessage(lgr);
       } else if (msg.cmd == BuzzCmd.ping) {
+        ringBell(c);
         final pong = BuzzMsg(BuzzCmd.server, BuzzCmd.pong, {});
         c.sendMessage(pong);
+      } else if (msg.cmd == BuzzCmd.pong) {
+        flashBell(c);
       } else if (msg.cmd == BuzzCmd.iAmReady) {
         setState(() {
           c.iAmReady = data["ready"] ?? false;

@@ -43,6 +43,7 @@ dependencies:
   flutter_spinbox: ^0.13.0
   socket_io_client: 1.0.1
   socket_io: 1.0.1
+  flutter_shake_animated: ^0.0.5
 
 dev_dependencies:
   flutter_test:

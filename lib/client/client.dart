@@ -22,7 +22,8 @@ class BuzzClientScreen extends StatefulWidget {
   State<BuzzClientScreen> createState() => _BuzzClientScreenState();
 }
 
-class _BuzzClientScreenState extends State<BuzzClientScreen> {
+class _BuzzClientScreenState extends State<BuzzClientScreen>
+    with SingleTickerProviderStateMixin {
   late IO.Socket socket;
   BuzzState state = BuzzState.clientWaitingForServer;
   bool connected = false;
@@ -32,6 +33,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
   final audioPlayer = AudioPlayer();
   String error = "";
   double secondsRemaining = 0;
+  bool bellRinging = false;
+  bool bellFlashing = false;
 
   @override
   void initState() {
@@ -41,16 +44,41 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     super.initState();
   }
 
-  Future audio() async {
-    AssetSource src = AssetSource("audio/Theriyuma.mp3");
-    await audioPlayer.play(src);
-  }
-
   @override
   void dispose() {
     userController.dispose();
     audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future audioTheriyuma() async {
+    AssetSource src = AssetSource("audio/Theriyuma.mp3");
+    await audioPlayer.play(src);
+  }
+
+  Future ringBell() async {
+    AssetSource src = AssetSource("audio/bell.mp3");
+    await audioPlayer.play(src);
+
+    setState(() {
+      bellRinging = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        bellRinging = false;
+      });
+    });
+  }
+
+  void flashBell() {
+    setState(() {
+      bellFlashing = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        bellFlashing = false;
+      });
+    });
   }
 
   setBuzzState(newState) {
@@ -205,7 +233,12 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     Widget row = Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: [name, WIDGETS.nameValue("SCORE", "0")]);
+        children: [
+          name,
+          WIDGETS.nameValue("SCORE", "0"),
+          WIDGETS.bellIconButton(() => sendPingToServer(),
+              hShake: bellRinging, vShake: bellFlashing),
+        ]);
 
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
@@ -340,7 +373,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
           const SizedBox(height: 20),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
-            const SizedBox(height: 30),
+            const SizedBox(width: 30),
             WIDGETS.buildCountdownTime(secondsRemaining)
           ]),
           const SizedBox(height: 20),
@@ -377,7 +410,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.iAmReady, data);
     sendMessageToServer(ping);
     setBuzzState(BuzzState.clientReady);
-    audio();
   }
 
   // Process Server messages
@@ -389,11 +421,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen> {
     });
 
     if (msg.cmd == BuzzCmd.ping) {
+      ringBell();
       final pong = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {});
       sendMessageToServer(pong);
+    } else if (msg.cmd == BuzzCmd.pong) {
+      flashBell();
     } else if (msg.cmd == BuzzCmd.showBuzz) {
       setBuzzState(BuzzState.clientReady);
-      audio();
+      audioTheriyuma();
     } else if (msg.cmd == BuzzCmd.hideBuzz) {
       setBuzzState(BuzzState.clientWaitingForCmd);
     } else if (msg.cmd == BuzzCmd.countdown) {
