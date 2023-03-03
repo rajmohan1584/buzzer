@@ -6,7 +6,7 @@ import 'package:buzzer/util/log.dart';
 
 class MulticastBroadcast {
   Future<RawDatagramSocket> socket =
-      RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      RawDatagramSocket.bind(InternetAddress.anyIPv4, 0, ttl: 3);
 
   void broadcast(String msg) {
     Log.log('Sending multicast message: $msg');
