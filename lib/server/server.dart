@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -31,19 +32,23 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   double roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
+  MulticastDiscover mcast = MulticastDiscover();
   Timer? roundTimer;
+  Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     Log.log('Server InitState');
     createServerAndListen();
+    startMulticastTimer();
     super.initState();
   }
 
   @override
   void dispose() {
     stopRoundTimer();
+    stopMulticastTimer();
     audioPlayer.dispose();
     super.dispose();
   }
@@ -100,6 +105,22 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   stopRoundTimer() {
     roundTimer?.cancel();
+  }
+
+  ///////////////////////////
+  //
+  startMulticastTimer() {
+    stopMulticastTimer();
+    const dur = Duration(seconds: 1);
+    multicastTimer = Timer.periodic(dur, onMulticastTimer);
+  }
+
+  onMulticastTimer(_) {
+    mcast.broadcast("1.2.3.4");
+  }
+
+  stopMulticastTimer() {
+    multicastTimer?.cancel();
   }
 
   void createServerAndListen() {

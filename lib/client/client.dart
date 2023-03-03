@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:buzzer/util/multicast.dart';
 //import 'package:buzzer/util/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
@@ -32,12 +33,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   double secondsRemaining = 0;
   bool bellRinging = false;
   bool bellFlashing = false;
+  MulticastDiscover mcast = MulticastDiscover();
 
   @override
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
     connectToServerAndListen();
+    mcast.listen(onFoundServerAddress);
     super.initState();
   }
 
@@ -89,6 +92,10 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 //    List<int> list = utf8.encode(s);
 //    Uint8List bytes = Uint8List.fromList(list);
     socket.emit('msg', [s]);
+  }
+
+  void onFoundServerAddress(String ip) {
+    Log.log("Found server IP: $ip");
   }
 
   void connectToServer() {
