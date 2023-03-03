@@ -40,7 +40,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     Log.log('Client InitState');
     userController.text = "Raj";
     connectToServerAndListen();
-    mlisten.listen(onFoundServerAddress);
+    //mlisten.listen(onFoundServerAddress);
     super.initState();
   }
 

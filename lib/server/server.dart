@@ -112,7 +112,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   startMulticastTimer() {
     stopMulticastTimer();
     const dur = Duration(seconds: 1);
-    multicastTimer = Timer.periodic(dur, onMulticastTimer);
+    //multicastTimer = Timer.periodic(dur, onMulticastTimer);
   }
 
   onMulticastTimer(_) {
