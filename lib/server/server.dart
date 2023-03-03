@@ -32,7 +32,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   double roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
-  MulticastDiscover mcast = MulticastDiscover();
+  MulticastBroadcast mbroadcast = MulticastBroadcast();
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
@@ -116,7 +116,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   onMulticastTimer(_) {
-    mcast.broadcast("1.2.3.4");
+    mbroadcast.broadcast("1.2.3.4");
   }
 
   stopMulticastTimer() {

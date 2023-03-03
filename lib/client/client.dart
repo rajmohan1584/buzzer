@@ -33,14 +33,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   double secondsRemaining = 0;
   bool bellRinging = false;
   bool bellFlashing = false;
-  MulticastDiscover mcast = MulticastDiscover();
+  MulticastListen mlisten = MulticastListen();
 
   @override
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
     connectToServerAndListen();
-    mcast.listen(onFoundServerAddress);
+    mlisten.listen(onFoundServerAddress);
     super.initState();
   }
 

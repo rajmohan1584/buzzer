@@ -4,10 +4,9 @@ import 'dart:convert';
 import 'package:buzzer/util/constants.dart';
 import 'package:buzzer/util/log.dart';
 
-class MulticastDiscover {
+class MulticastBroadcast {
   Future<RawDatagramSocket> socket =
-      RawDatagramSocket.bind(InternetAddress.anyIPv4, CONST.multicastPort);
-  MulticastDiscover();
+      RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
 
   void broadcast(String msg) {
     Log.log('Sending multicast message: $msg');
@@ -16,6 +15,11 @@ class MulticastDiscover {
           CONST.multicastPort);
     });
   }
+}
+
+class MulticastListen {
+  Future<RawDatagramSocket> socket =
+      RawDatagramSocket.bind(InternetAddress.anyIPv4, CONST.multicastPort);
 
   void listen(Function(String) callback) {
     socket.then((socket) {
@@ -32,6 +36,7 @@ class MulticastDiscover {
       });
     });
   }
+}
 
   /*
   static void sendMulticast(String message) {
@@ -63,4 +68,3 @@ class MulticastDiscover {
     });
   }
   */
-}
