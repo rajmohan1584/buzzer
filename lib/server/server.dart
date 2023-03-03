@@ -26,6 +26,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   bool created = false;
   bool enableTimeout = true;
   double timeoutSeconds = 10;
+  bool enableBuzzed = true;
+  double buzzedCount = 3;
   double roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
@@ -214,7 +216,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     final availableHt =
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
-    final topPanelHeight = availableHt * 0.5;
+    final topPanelHeight = availableHt * 0.6;
     final topPanelWidth = MediaQuery.of(context).size.width;
 
     return WillPopScope(
@@ -350,6 +352,18 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
   }
 
+  void onChangeEnableBuzzed(bool enable) {
+    setState(() {
+      enableBuzzed = enable;
+    });
+  }
+
+  void onBuzzedCountChange(double count) {
+    setState(() {
+      buzzedCount = count;
+    });
+  }
+
   void onStartRound() {
     setState(() {
       roundStarted = true;
@@ -401,10 +415,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          WIDGETS.nameValue("Total", "$total"),
-          WIDGETS.nameValue("Buzzed Yes", "$yes"),
-          WIDGETS.nameValue("Buzzed No", "$no"),
-          WIDGETS.nameValue("Pending", "$pending"),
+          WIDGETS.nameValue("மொத்தம்", "$total"),
+          WIDGETS.nameValue("தெரியும்", "$yes"),
+          WIDGETS.nameValue("தெரியாது", "$no"),
+          WIDGETS.nameValue("தூக்கம்", "$pending"),
         ]);
 
     Widget buttons = Row(
@@ -419,33 +433,26 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         ]);
 
     Widget timout = WIDGETS.switchRowWithInput(
-        "Hide Buzzer after set seconds",
+        "Auto Stop Timeout Seconds",
         enableTimeout,
         onChangeEnableTimeout,
         timeoutSeconds,
         onTimeoutSecondsChange);
-    /*
-    Widget options = Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          WIDGETS.switchRowWithInput(
-              "Hide Buzzer after set seconds",
-              enableTimeout,
-              onChangeEnableTimeout,
-              timeoutSeconds,
-              onTimeoutSecondsChange)
-        ]);
-    */
+
+    Widget buzzed = WIDGETS.switchRowWithInput("Auto Stop on தெரியும் Count",
+        enableBuzzed, onChangeEnableBuzzed, buzzedCount, onBuzzedCountChange);
+
     final child = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           status,
-          const SizedBox(height: 15),
-          buttons,
-          const SizedBox(height: 15),
-          timout
+          const SizedBox(height: 5),
+          const Divider(height: 2, thickness: 2),
+          timout,
+          buzzed,
+          const Divider(height: 2, thickness: 2),
+          buttons
         ]);
 
     return Card(
@@ -499,6 +506,17 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           c.updated = DateTime.now();
           clients.sortByBuzzedUpdated();
         });
+
+        final counts = clients.counts;
+        final total = counts[0], yes = counts[1], no = counts[2];
+        if (total == yes + no) {
+          // Round Done.
+          onStopRound();
+        }
+        if (enableBuzzed && yes == buzzedCount) {
+          // Round Donw
+          onStopRound();
+        }
       }
     }
   }

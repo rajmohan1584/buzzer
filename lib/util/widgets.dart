@@ -21,11 +21,11 @@ class WIDGETS {
   }
 
   static Widget nameText(String name) {
-    return Text(name, style: const TextStyle(fontSize: 12.0));
+    return Text(name, style: const TextStyle(fontSize: 14.0));
   }
 
   static Widget valueText(String value) {
-    return Text(value, style: const TextStyle(fontSize: 14.0));
+    return Text(value, style: const TextStyle(fontSize: 16.0));
   }
 
   static Widget keyValueText(String value) {
@@ -37,7 +37,11 @@ class WIDGETS {
     return Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: [valueText(value), nameText(name)]);
+        children: [
+          valueText(value),
+          const SizedBox(height: 5),
+          nameText(name)
+        ]);
   }
 
   static Widget redBuzzer0() {
@@ -244,10 +248,12 @@ class WIDGETS {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(text),
+        const SizedBox(width: 10),
         CupertinoSwitch(value: switchValue, onChanged: onSwitchChanged),
+        const SizedBox(width: 10),
         SizedBox(
           width: 150,
-          height: 150,
+          height: 50,
           child: CupertinoSpinBox(
             min: 1,
             max: 60,
