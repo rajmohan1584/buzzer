@@ -44,6 +44,7 @@ dependencies:
   socket_io_client: 1.0.1
   socket_io: 1.0.1
   flutter_shake_animated: ^0.0.5
+  network_info_plus: ^3.0.2
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/multicast.dart';
+import 'package:buzzer/util/network.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   final BuzzClients clients = BuzzClients();
   BuzzState state = BuzzState.serverWaitingForClients;
   late final Server server;
+  String myIP = "";
+  String myWifi = "";
   bool created = false;
   bool enableTimeout = true;
   double timeoutSeconds = 10;
@@ -41,7 +44,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void initState() {
     Log.log('Server InitState');
     createServerAndListen();
-    startMulticastTimer();
     super.initState();
   }
 
@@ -112,28 +114,41 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   startMulticastTimer() {
     stopMulticastTimer();
     const dur = Duration(seconds: 1);
-    //multicastTimer = Timer.periodic(dur, onMulticastTimer);
+    multicastTimer = Timer.periodic(dur, onMulticastTimer);
   }
 
   onMulticastTimer(_) {
-    mbroadcast.broadcast("1.2.3.4");
+    mbroadcast.broadcast(myIP);
   }
 
   stopMulticastTimer() {
     multicastTimer?.cancel();
   }
 
-  void createServerAndListen() {
-    const ip = "localhost";
+  void createServerAndListen() async {
+    String ip = await NET.myIP();
+    String wifi = await NET.myWifi();
+
+    setState(() {
+      myIP = ip;
+      myWifi = wifi;
+    });
+
+    //const ip = "localhost";
     const port = 3000;
-    const url = 'http://$ip:$port';
+    String url = 'http://$ip:$port';
 
     Log.log('Creating server: $url');
     server = Server();
+    Log.log('Creating server: $url');
     server.on('connection', (client) {
       handleNewConnection(client);
     });
-    server.listen(port);
+    await server.listen(port);
+
+    Log.log('Server listning on: $url');
+
+    startMulticastTimer();
   }
 
   void handleNewConnection(Socket client) {

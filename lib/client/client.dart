@@ -24,6 +24,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     with SingleTickerProviderStateMixin {
   late IO.Socket socket;
   BuzzState state = BuzzState.clientWaitingForServer;
+  String serverIP = "";
   bool connected = false;
   final userController = TextEditingController();
   String userName = "";
@@ -39,8 +40,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
-    connectToServerAndListen();
-    //mlisten.listen(onFoundServerAddress);
+//    connectToServerAndListen();
+    mlisten.listen(onFoundServerAddress);
     super.initState();
   }
 
@@ -96,12 +97,18 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   void onFoundServerAddress(String ip) {
     Log.log("Found server IP: $ip");
+    if (state == BuzzState.clientWaitingForServer) {
+      setState(() {
+        serverIP = ip;
+        connectToServerAndListen();
+      });
+    }
   }
 
   void connectToServer() {
-    const ip = "localhost";
+    //const ip = "localhost";
     const port = 3000;
-    const url = 'http://$ip:$port';
+    String url = 'http://$serverIP:$port';
 
     Log.log('Connecting to server: $url');
 
@@ -273,7 +280,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   Widget clientWaitingForServer() {
     return const Center(child: Text("Waiting for Server"));
-    //return WIDGETS.joinButton(connectToServerAndListen);
   }
 
   void onLogin() async {

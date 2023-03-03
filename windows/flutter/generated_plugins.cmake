@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
+  network_info_plus
   screen_retriever
   window_manager
 )
