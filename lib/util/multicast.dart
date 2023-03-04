@@ -3,7 +3,44 @@ import 'dart:convert';
 
 import 'package:buzzer/util/constants.dart';
 import 'package:buzzer/util/log.dart';
+import 'package:udp/udp.dart';
 
+class MulticastSender {
+  final Endpoint multicastEndpoint = Endpoint.multicast(
+      InternetAddress(CONST.multicastIP),
+      port: Port(CONST.multicastPort));
+  late UDP sender;
+
+  Future init() async {
+    sender = await UDP.bind(Endpoint.any());
+  }
+
+  void broadcast(String msg) async {
+    Log.log('Sending multicast message: $msg');
+    int bytes = await sender.send(msg.codeUnits, multicastEndpoint);
+    Log.log('Sent multicast bytes: $bytes');
+  }
+}
+
+class MulticastListener {
+  final Endpoint multicastEndpoint = Endpoint.multicast(
+      InternetAddress(CONST.multicastIP),
+      port: Port(CONST.multicastPort));
+  late UDP receiver;
+
+  void listen(Function(String) callback) async {
+    receiver = await UDP.bind(multicastEndpoint);
+    receiver.asStream().listen((Datagram? d) {
+      if (d != null) {
+        var str = String.fromCharCodes(d.data);
+
+        Log.log('Received multicast: $str');
+        callback(str);
+      }
+    });
+  }
+}
+/*
 class MulticastBroadcast {
   Future<RawDatagramSocket> socket =
       RawDatagramSocket.bind(InternetAddress.anyIPv4, 0, ttl: 3);
@@ -39,7 +76,7 @@ class MulticastListen {
     });
   }
 }
-
+*/
   /*
   static void sendMulticast(String message) {
     Log.log('Sending multicast message: $message');

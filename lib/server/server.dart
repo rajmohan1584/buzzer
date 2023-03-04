@@ -35,7 +35,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   double roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
-  MulticastBroadcast mbroadcast = MulticastBroadcast();
+  MulticastSender mbroadcast = MulticastSender();
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
@@ -43,6 +43,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   void initState() {
     Log.log('Server InitState');
+    mbroadcast.init();
     createServerAndListen();
     super.initState();
   }
