@@ -11,7 +11,7 @@ class MulticastBroadcast {
   void broadcast(String msg) {
     Log.log('Sending multicast message: $msg');
     socket.then((socket) {
-      socket.send(utf8.encode(msg), InternetAddress(CONST.multicastIP),
+      socket.send('$msg\n'.codeUnits, InternetAddress(CONST.multicastIP),
           CONST.multicastPort);
     });
   }
@@ -22,16 +22,18 @@ class MulticastListen {
       RawDatagramSocket.bind(InternetAddress.anyIPv4, CONST.multicastPort);
 
   void listen(Function(String) callback) {
+    Log.log('MulticastListen.listen');
     socket.then((socket) {
+      Log.log('MulticastListen.listen socket.then - JoinMulticast');
       socket.joinMulticast(InternetAddress(CONST.multicastIP));
+      Log.log('MulticastListen.listen Actually listening');
       socket.listen((event) {
-        if (event == RawSocketEvent.read) {
-          var datagram = socket.receive();
-          if (datagram != null) {
-            var message = utf8.decode(datagram.data);
-            Log.log('Received multicast message: $message');
-            callback(message);
-          }
+        Log.log('MulticastListen.listen event $event');
+        Datagram? d = socket.receive();
+        if (d != null) {
+          var message = String.fromCharCodes(d.data).trim();
+          Log.log('Datagram from ${d.address.address}:${d.port}: $message');
+          callback(message);
         }
       });
     });
