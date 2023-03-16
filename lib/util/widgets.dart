@@ -1,5 +1,6 @@
 import 'package:buzzer/util/command.dart';
 import 'package:buzzer/util/format.dart';
+import 'package:buzzer/util/heartbeat.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shake_animated/flutter_shake_animated.dart';
@@ -103,6 +104,14 @@ class WIDGETS {
     return const Text("தெரியாது",
         style: TextStyle(
             fontSize: 18, fontFamily: "Coiny-Regular", color: Colors.white));
+  }
+
+  static Widget waitingForClients() {
+    return const Text("I'am Waiting!", style: TextStyle(fontSize: 20));
+  }
+
+  static Widget heartbeatIcon() {
+    return HeartBeat(child: const Icon(CupertinoIcons.heart_fill));
   }
 
   static Widget buildBuzzer(Widget img, Widget text) {

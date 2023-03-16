@@ -184,70 +184,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
   }
 
-  /*
-  void createServerAndListen() async {
-    Log.log('Creating server');
-    //final ip = InternetAddress.anyIPv4;
-    //final ip = CONST.iPhoneIp;
-    const ip = 'localhost';
-    const port = 5678;
-    server = await ServerSocket.bind(ip, port);
-    Log.log('Server created: ${server.address.address}: ${server.port}');
-    setState(() {
-      created = true;
-    });
-    // listen for clent connections to the server
-    server.listen((Socket client) {
-      handleNewConnection(client);
-    });
-  }
-
-  void handleNewConnection(Socket client) {
-    Log.log('New Connection');
-    Log.log('Connection from'
-        ' ${client.remoteAddress.address}:${client.remotePort}');
-
-    setState(() {
-      BuzzClient? c = clients.add("Unknown", client);
-      if (c != null) {
-        c.created = DateTime.now();
-        c.updated = DateTime.now();
-        c.state = BuzzState.clientWaitingToLogin;
-      }
-    });
-
-    // listen for events from the client
-    client.listen(
-      // handle data from the client
-      (Uint8List data) async {
-        final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
-        if (msg == null) {
-          Log.log("error");
-          return;
-        }
-        handleClientMessage(client, msg);
-      },
-
-      // handle errors
-      onError: (error) {
-        Log.log(error);
-        client.close();
-        handleCloseClient(client);
-      },
-
-      // handle the client closing the connection
-      onDone: () {
-        Log.log('Client left');
-        client.close();
-        handleCloseClient(client);
-      },
-    );
-  }
-  */
-
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
+      actions: [WIDGETS.heartbeatIcon()],
       title: WIDGETS.appBarTitle(name: "நடுவர்"),
     );
 
@@ -286,6 +226,11 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   Widget buildClients() {
+    final count = clients.length;
+    if (count == 0) {
+      // Waiting for clients.
+      return Center(child: WIDGETS.waitingForClients());
+    }
     return ListView.builder(
       itemCount: clients.length,
       itemBuilder: (context, int index) {
