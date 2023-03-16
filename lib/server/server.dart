@@ -39,6 +39,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
+  bool alive = true;
 
   @override
   void initState() {
@@ -118,8 +119,22 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     multicastTimer = Timer.periodic(dur, onMulticastTimer);
   }
 
-  onMulticastTimer(_) {
-    mbroadcast.broadcast(myIP);
+  onMulticastTimer(_) async {
+    try {
+      final int bytes = await mbroadcast.broadcast(myIP);
+      if (bytes > 0 && !alive) {
+        setState(() {
+          alive = true;
+        });
+      }
+    } catch (e) {
+      Log.log(e);
+      setState(() {
+        alive = false;
+      });
+      mbroadcast.init();
+      startMulticastTimer();
+    }
   }
 
   stopMulticastTimer() {
@@ -187,8 +202,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      actions: [WIDGETS.heartbeatIcon()],
-      title: WIDGETS.appBarTitle(name: "நடுவர்"),
+      title: WIDGETS.heartbeatIcon(alive),
+      //title: WIDGETS.appBarTitle(name: "நடுவர்"),
     );
 
     final availableHt =

@@ -15,10 +15,16 @@ class MulticastSender {
     sender = await UDP.bind(Endpoint.any());
   }
 
-  void broadcast(String msg) async {
-    Log.log('Sending multicast message: $msg');
-    int bytes = await sender.send(msg.codeUnits, multicastEndpoint);
-    Log.log('Sent multicast bytes: $bytes');
+  Future<int> broadcast(String msg) async {
+    try {
+      Log.log('Sending multicast message: $msg');
+      int bytes = await sender.send(msg.codeUnits, multicastEndpoint);
+      Log.log('Sent multicast bytes: $bytes');
+      return bytes;
+    } catch (e) {
+      Log.log('Error $e');
+      rethrow;
+    }
   }
 }
 

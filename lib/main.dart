@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:buzzer/util/log.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -33,7 +35,11 @@ void main() async {
     });
   }
 
-  runApp(const MyApp());
+  runZonedGuarded(() {
+    runApp(const MyApp());
+  }, (Object error, StackTrace stack) {
+    Log.log(error);
+  });
 }
 
 class MyApp extends StatelessWidget {

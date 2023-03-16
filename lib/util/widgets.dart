@@ -110,8 +110,9 @@ class WIDGETS {
     return const Text("I'am Waiting!", style: TextStyle(fontSize: 20));
   }
 
-  static Widget heartbeatIcon() {
-    return HeartBeat(child: const Icon(CupertinoIcons.heart_fill));
+  static Widget heartbeatIcon(bool alive) {
+    if (alive) return HeartBeat(child: const Icon(CupertinoIcons.heart_fill));
+    return const Icon(CupertinoIcons.heart_slash);
   }
 
   static Widget buildBuzzer(Widget img, Widget text) {
