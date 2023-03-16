@@ -111,7 +111,7 @@ class WIDGETS {
   }
 
   static Widget heartbeatIcon(bool alive) {
-    if (alive) return HeartBeat(child: const Icon(CupertinoIcons.heart_fill));
+    if (alive) return HeartBeat(child: const Icon(CupertinoIcons.heart_fill, color: Colors.red,));
     return const Icon(CupertinoIcons.heart_slash);
   }
 

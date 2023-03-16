@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/util/multicast.dart';
 //import 'package:buzzer/util/constants.dart';
@@ -35,6 +37,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   bool bellRinging = false;
   bool bellFlashing = false;
   MulticastListener mlistener = MulticastListener();
+  Timer? multicastCheckTimer;
+  DateTime lastMulticastUpdateTime = DateTime.now();
+  bool alive = false;
 
   @override
   void initState() {
@@ -42,6 +47,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     userController.text = "Raj";
 //    connectToServerAndListen();
     mlistener.listen(onFoundServerAddress);
+    startMulticastCheckTimer();
     super.initState();
   }
 
@@ -50,6 +56,25 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     userController.dispose();
     audioPlayer.dispose();
     super.dispose();
+  }
+
+  startMulticastCheckTimer() {
+    stoptMulticastCheckTimer();
+    const dur = Duration(seconds: 3);
+    multicastCheckTimer = Timer.periodic(dur, onMulticastCheckTimer);
+  }
+
+  onMulticastCheckTimer(_) async {
+    Duration d = DateTime.now().difference(lastMulticastUpdateTime);
+    if (d.inSeconds > 3) {
+      setState(() {
+        alive = false;
+      });
+    }
+  }
+
+  stoptMulticastCheckTimer() {
+    multicastCheckTimer?.cancel();
   }
 
   Future audioTheriyuma() async {
@@ -97,6 +122,13 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   void onFoundServerAddress(String ip) {
     Log.log("Found server IP: $ip");
+    if (ip.isNotEmpty) {
+      lastMulticastUpdateTime = DateTime.now();
+      if (!alive) {
+        setState(() {
+          alive = true;
+        });
+      }
     if (state == BuzzState.clientWaitingForServer) {
       setState(() {
         serverIP = ip;
@@ -104,7 +136,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       });
     }
   }
-
+  }
+  
   void connectToServer() {
     //const ip = "localhost";
     const port = 3000;
@@ -222,6 +255,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
+      leading: WIDGETS.heartbeatIcon(alive),
       title: WIDGETS.appBarTitle(name: userName),
     );
 

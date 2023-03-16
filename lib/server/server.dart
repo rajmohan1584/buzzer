@@ -39,7 +39,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
-  bool alive = true;
+  bool alive = false;
 
   @override
   void initState() {
@@ -202,8 +202,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      title: WIDGETS.heartbeatIcon(alive),
-      //title: WIDGETS.appBarTitle(name: "நடுவர்"),
+      leading: WIDGETS.heartbeatIcon(alive),
+      title: WIDGETS.appBarTitle(name: "நடுவர்"),
     );
 
     final availableHt =
