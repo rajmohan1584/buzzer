@@ -446,8 +446,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           status,
           const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
+          const SizedBox(height: 5),
           timout,
           buzzed,
+          const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
           buttons
         ]);

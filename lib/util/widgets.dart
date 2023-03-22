@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_shake_animated/flutter_shake_animated.dart';
 import 'package:flutter_spinbox/flutter_spinbox.dart';
 
+import '../widets/int_spinner.dart';
+
 class WIDGETS {
   static Image assetImage(String file,
       {double width = 30, double height = 30, color}) {
@@ -111,7 +113,12 @@ class WIDGETS {
   }
 
   static Widget heartbeatIcon(bool alive) {
-    if (alive) return HeartBeat(child: const Icon(CupertinoIcons.heart_fill, color: Colors.red,));
+    if (alive)
+      return HeartBeat(
+          child: const Icon(
+        CupertinoIcons.heart_fill,
+        color: Colors.red,
+      ));
     return const Icon(CupertinoIcons.heart_slash);
   }
 
@@ -248,6 +255,28 @@ class WIDGETS {
   }
 
   static Widget switchRowWithInput(
+      String text,
+      bool switchValue,
+      void Function(bool) onSwitchChanged,
+      double inputValue,
+      void Function(double) onInputChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+            flex: 1,
+            child: Transform.scale(
+                scale: 0.75,
+                child: CupertinoSwitch(
+                    value: switchValue, onChanged: onSwitchChanged))),
+        Expanded(flex: 3, child: Text(text)),
+        Expanded(flex: 2, child: IntSpinner(inputValue.toInt(), 1, 60)),
+      ],
+    );
+  }
+
+  static Widget switchRowWithInput0(
       String text,
       bool switchValue,
       void Function(bool) onSwitchChanged,
