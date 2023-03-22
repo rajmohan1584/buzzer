@@ -30,6 +30,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   bool connected = false;
   final userController = TextEditingController();
   String userName = "";
+  int myScore = 0;
   List<BuzzMsg> serverMessages = [];
   final audioPlayer = AudioPlayer();
   String error = "";
@@ -129,15 +130,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
           alive = true;
         });
       }
-    if (state == BuzzState.clientWaitingForServer) {
-      setState(() {
-        serverIP = ip;
-        connectToServerAndListen();
-      });
+      if (state == BuzzState.clientWaitingForServer) {
+        setState(() {
+          serverIP = ip;
+          connectToServerAndListen();
+        });
+      }
     }
   }
-  }
-  
+
   void connectToServer() {
     //const ip = "localhost";
     const port = 3000;
@@ -280,7 +281,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           name,
-          WIDGETS.nameValue("SCORE", "0"),
+          WIDGETS.nameValue("SCORE", "$myScore"),
           WIDGETS.bellIconButton(() => sendPingToServer(),
               hShake: bellRinging, vShake: bellFlashing),
         ]);
@@ -479,6 +480,11 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       double sec = msg.data["sec"] ?? 0;
       setState(() {
         secondsRemaining = sec;
+      });
+    } else if (msg.cmd == BuzzCmd.score) {
+      int score = msg.data["score"] ?? 0;
+      setState(() {
+        myScore = score;
       });
     }
   }

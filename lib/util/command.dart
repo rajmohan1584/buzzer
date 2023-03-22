@@ -22,4 +22,6 @@ class BuzzCmd {
   static get buzzYes => "BUZZ-YES";
 
   static get countdown => "COUNTDOWN";
+
+  static get score => "SCORE";
 }

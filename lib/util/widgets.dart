@@ -271,7 +271,9 @@ class WIDGETS {
                 child: CupertinoSwitch(
                     value: switchValue, onChanged: onSwitchChanged))),
         Expanded(flex: 3, child: Text(text)),
-        Expanded(flex: 2, child: IntSpinner(inputValue.toInt(), 1, 60)),
+        Expanded(
+            flex: 2,
+            child: IntSpinner(inputValue.toInt(), 1, 60, onInputChanged)),
       ],
     );
   }

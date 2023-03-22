@@ -3,7 +3,9 @@ import 'package:flutter/cupertino.dart';
 
 class IntSpinner extends StatefulWidget {
   int value, min, max;
-  IntSpinner(this.value, this.min, this.max, {Key? key}) : super(key: key);
+  void Function(double p1) onChanged;
+  IntSpinner(this.value, this.min, this.max, this.onChanged, {Key? key})
+      : super(key: key);
 
   @override
   State<IntSpinner> createState() => _IntSpinnerState();
@@ -50,6 +52,7 @@ class _IntSpinnerState extends State<IntSpinner> {
     setState(() {
       value = v;
       intController.text = '$value';
+      widget.onChanged(v.toDouble());
     });
   }
 

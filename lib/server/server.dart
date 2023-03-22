@@ -13,6 +13,8 @@ import 'package:socket_io/socket_io.dart';
 import '../model/client.dart';
 import '../model/message.dart';
 import '../util/command.dart';
+import '../util/constants.dart';
+import '../widets/int_spinner.dart';
 
 class BuzzServerScreen extends StatefulWidget {
   const BuzzServerScreen({super.key});
@@ -199,6 +201,13 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
   }
 
+  onClientScoreChange(BuzzClient client, int score) {
+    setState(() {
+      client.score = score;
+      sendScoreToClient(client);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
@@ -268,21 +277,23 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     final name = Text(client.user,
         style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
-    Widget row = IntrinsicWidth(
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Expanded(child: name),
-      //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
-      Expanded(child: WIDGETS.buzzedStatus(client.buzzedState, index)),
+    Widget row =
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Expanded(
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          WIDGETS.plusIconButton(() => {}),
-          WIDGETS.minusIconButton(() => {}),
-          WIDGETS.bellIconButton(() => sendPingToClient(client),
-              hShake: client.bellRinging, vShake: client.bellFlashing),
-        ]),
-      ),
-    ]));
+          flex: 1,
+          child: WIDGETS.bellIconButton(() => sendPingToClient(client),
+              hShake: client.bellRinging, vShake: client.bellFlashing)),
+      Expanded(flex: 5, child: name),
+      //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
+      Expanded(flex: 2, child: WIDGETS.buzzedStatus(client.buzzedState, index)),
+      Expanded(
+          flex: 3,
+          child: IntSpinner(
+              client.score,
+              CONST.clientMinScore,
+              CONST.clientMaxScore,
+              (double v) => {onClientScoreChange(client, v.toInt())})),
+    ]);
 
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
@@ -535,6 +546,13 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     //List<int> list = utf8.encode(s);
     //Uint8List bytes = Uint8List.fromList(list);
     server.emit('msg', [s]);
+  }
+
+  void sendScoreToClient(BuzzClient client) {
+    final data = {"score": client.score};
+    final score = BuzzMsg(BuzzCmd.server, BuzzCmd.score, data);
+
+    client.sendMessage(score);
   }
 
   //

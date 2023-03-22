@@ -9,6 +9,7 @@ class BuzzClient {
   String user;
   bool iAmReady = false;
   String buzzedState = "";
+  int score = 0;
   final Socket socket;
   bool bellRinging = false;
   bool bellFlashing = false;
