@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 class IntSpinner extends StatefulWidget {
-  int value, min, max;
-  void Function(double p1) onChanged;
-  IntSpinner(this.value, this.min, this.max, this.onChanged, {Key? key})
+  final int value, min, max;
+  final void Function(double p1) onChanged;
+  const IntSpinner(this.value, this.min, this.max, this.onChanged, {Key? key})
       : super(key: key);
 
   @override
