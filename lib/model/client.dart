@@ -143,4 +143,18 @@ class BuzzClients {
       return a.updated.compareTo(b.updated);
     });
   }
+
+  getTopBuzzedData(int max) {
+    final buzzed = [];
+    int i = 0;
+    for (var client in clients) {
+      if (client.buzzedState == BuzzCmd.buzzYes) {
+        i++;
+        buzzed.add({"place": i, "name": client.user});
+        if (i == max) break;
+      }
+    }
+    final data = {"count": i, "buzzers": buzzed};
+    return data;
+  }
 }

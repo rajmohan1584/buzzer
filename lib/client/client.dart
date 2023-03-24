@@ -41,6 +41,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Timer? multicastCheckTimer;
   DateTime lastMulticastUpdateTime = DateTime.now();
   bool alive = false;
+  Map? topBuzzers;
 
   @override
   void initState() {
@@ -380,6 +381,24 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildWaitingForCmd() {
+    if (topBuzzers != null) {
+      final children = <Widget>[];
+      final int count = topBuzzers!["count"] ?? 0;
+      if (count == 0) {
+        return const Center(child: Text("No one buzzed this time"));
+      }
+
+      final buzzers = topBuzzers!["buzzers"] ?? [];
+      buzzers.forEach((d) {
+        final int place = d["place"] ?? -1;
+        final String name = d["name"] ?? "unknown";
+        children.add(Text("$place - $name"));
+      });
+
+      return Card(
+        child: Column(children: children),
+      );
+    }
     return const Center(child: Text("Connected. Waiting for Server Cmd"));
   }
 
@@ -475,7 +494,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       setBuzzState(BuzzState.clientReady);
       audioTheriyuma();
     } else if (msg.cmd == BuzzCmd.hideBuzz) {
+      setState(() {
+        topBuzzers = null;
+      });
       setBuzzState(BuzzState.clientWaitingForCmd);
+    } else if (msg.cmd == BuzzCmd.topBuzzers) {
+      setState(() {
+        topBuzzers = msg.data;
+      });
     } else if (msg.cmd == BuzzCmd.countdown) {
       double sec = msg.data["sec"] ?? 0;
       setState(() {
@@ -488,4 +514,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       });
     }
   }
+
+  showTopBuzzers(data) {}
 }

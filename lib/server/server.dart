@@ -387,7 +387,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     stopRoundTimer();
     sendCountdownToAllClients();
     hideBuzzerToAllClients();
-    //sendTopBuzzersToAllClients();
+    sendTopBuzzersToAllClients();
   }
 
   Widget buildStartStop() {
@@ -553,6 +553,17 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     final score = BuzzMsg(BuzzCmd.server, BuzzCmd.score, data);
 
     client.sendMessage(score);
+  }
+
+  //
+  void sendTopBuzzersToAllClients() {
+    clients.sortByBuzzedUpdated();
+
+    // Get the top buzzedCount clients.
+    final data = clients.getTopBuzzedData(buzzedCount.toInt());
+
+    final topBuzzers = BuzzMsg(BuzzCmd.server, BuzzCmd.topBuzzers, data);
+    sendMessageToAllClients(topBuzzers);
   }
 
   //
