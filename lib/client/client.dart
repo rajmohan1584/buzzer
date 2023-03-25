@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/util/multicast.dart';
+import 'package:buzzer/widets/top_buzzers.dart';
 //import 'package:buzzer/util/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
@@ -382,22 +383,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   Widget buildWaitingForCmd() {
     if (topBuzzers != null) {
-      final children = <Widget>[];
+
       final int count = topBuzzers!["count"] ?? 0;
       if (count == 0) {
         return const Center(child: Text("No one buzzed this time"));
       }
 
-      final buzzers = topBuzzers!["buzzers"] ?? [];
-      buzzers.forEach((d) {
-        final int place = d["place"] ?? -1;
-        final String name = d["name"] ?? "unknown";
-        children.add(Text("$place - $name"));
-      });
-
-      return Card(
-        child: Column(children: children),
-      );
+      final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
+      return TopBuzzers(buzzers);
     }
     return const Center(child: Text("Connected. Waiting for Server Cmd"));
   }

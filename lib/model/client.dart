@@ -150,7 +150,7 @@ class BuzzClients {
     for (var client in clients) {
       if (client.buzzedState == BuzzCmd.buzzYes) {
         i++;
-        buzzed.add({"place": i, "name": client.user});
+        buzzed.add({"position": i, "name": client.user});
         if (i == max) break;
       }
     }
