@@ -117,6 +117,9 @@ msix_config:
   identity_name: 56566NitroSonic.Teriyum
   msix_version: 1.0.0.0
 
+#<a target="_blank" href="https://icons8.com/icon/7857/ask-question">Ask Question</a>
+# icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+
 flutter_icons:
   ios: true
   remove_alpha_ios: true
