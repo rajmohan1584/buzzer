@@ -21,11 +21,11 @@ class _TopBuzzersState extends State<TopBuzzers> {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return buildBody();
   }
 
   Widget buildBody() {
-    return Card(
+    return Expanded(
         child: ListView.builder(
             itemCount: buzzers.length,
             itemBuilder: (context, int index) {
@@ -39,9 +39,14 @@ class _TopBuzzersState extends State<TopBuzzers> {
     final String name = buzzer["name"] ?? "Unk";
 
     return Card(
-        child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [Text("$position"), Text(name)],
-    ));
+        margin: const EdgeInsets.all(50.0),
+        elevation: 10,
+        child: Padding(
+          padding: const EdgeInsets.all(25.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [Text("$position"), Text(name)],
+          ),
+        ));
   }
 }
