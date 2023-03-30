@@ -9,8 +9,20 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  onLogin() {}
   @override
   Widget build(BuildContext context) {
-    return Container(child: WIDGETS.buildRadar());
+    double w = MediaQuery.of(context).size.width;
+    if (w > MediaQuery.of(context).size.height) {
+      w = MediaQuery.of(context).size.height;
+    }
+    w -= 20;
+    return Scaffold(
+        appBar: AppBar(title: const Text("Buzzer - Waiting for Quiz Master")),
+        backgroundColor: Colors.black,
+        floatingActionButton: FloatingActionButton.extended(
+            onPressed: onLogin, label: const Text("Login as Quiz Master")),
+        body: Center(
+            child: SizedBox(width: w, height: w, child: WIDGETS.buildRadar())));
   }
 }
