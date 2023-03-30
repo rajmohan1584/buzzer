@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:buzzer/home.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'package:buzzer/client/client.dart';
-import 'package:buzzer/score_board/score_board.dart';
+//import 'package:buzzer/score_board/score_board.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/widgets.dart';
 
@@ -47,8 +48,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: MyHomePage(),
+    return MaterialApp(
+      home: Home(),
     );
   }
 }
@@ -78,11 +79,6 @@ class MyHomePageState extends State<MyHomePage> {
             const SizedBox(
               height: 20,
             ),
-            ElevatedButton(
-                onPressed: _onScoreBoard, child: const Text("Score Board")),
-            const SizedBox(
-              height: 20,
-            ),
             WIDGETS.serverButton(_onServer)
           ],
         ),
@@ -97,12 +93,14 @@ class MyHomePageState extends State<MyHomePage> {
             builder: (BuildContext context) => const BuzzClientScreen()));
   }
 
+  /*
   void _onScoreBoard() {
     Navigator.pushReplacement(
         context,
         MaterialPageRoute(
             builder: (BuildContext context) => const BuzzScoreBoardScreen()));
   }
+  */
 
   void _onServer() {
     Navigator.pushReplacement(

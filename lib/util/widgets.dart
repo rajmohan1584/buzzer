@@ -315,4 +315,12 @@ class WIDGETS {
       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: color),
     );
   }
+
+  static Widget buildRadar() {
+    return Image.asset(
+      "assets/images/radar.gif",
+      height: 125.0,
+      width: 125.0,
+    );
+  }
 }
