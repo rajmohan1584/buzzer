@@ -109,7 +109,8 @@ class WIDGETS {
   }
 
   static Widget waitingForClients() {
-    return const Text("I'am Waiting!", style: TextStyle(fontSize: 20));
+    return const Text("Waiting for Students to Join!",
+        style: TextStyle(fontSize: 20));
   }
 
   static Widget heartbeatIcon(bool alive) {

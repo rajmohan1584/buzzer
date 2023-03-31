@@ -1,7 +1,10 @@
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/log.dart';
+import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
+
+import 'client/client.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -12,10 +15,56 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final FocusNode focusNode = FocusNode();
-  bool qm = false;
+  String mode = "idk"; // client, server
+  bool allowServerLogin = false;
   final maxlen = 6;
   String passkey = "";
   final secretKey = "135246";
+  MulticastListener mlistener = MulticastListener();
+  bool alive = false;
+
+  @override
+  void initState() {
+    mlistener.listen(onFoundQuizMaster);
+    super.initState();
+    resetAll();
+  }
+
+  @override
+  dispose() {
+    super.dispose();
+  }
+
+  resetAll() {
+    setState(() {
+      passkey = "";
+      mode = "idk";
+      allowServerLogin = false;
+    });
+    Future.delayed(const Duration(seconds: 5), () {
+      setState(() {
+        allowServerLogin = true;
+      });
+    });
+  }
+
+  void onFoundQuizMaster(String ip) {
+    Log.log("onFoundQuizMaster IP: $ip");
+    setState(() {
+      alive = true;
+      mode = "client";
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        gotoClient();
+      });
+    });
+  }
+
+  void gotoClient() {
+    Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (BuildContext context) => const BuzzClientScreen()));
+  }
 
   void gotoServer() {
     Navigator.pushReplacement(
@@ -30,11 +79,14 @@ class _HomeState extends State<Home> {
       if (passkey.length == maxlen) {
         if (passkey == secretKey) {
           // success - goto server
-          gotoServer();
+          mode = "server";
+          mlistener.close();
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            gotoServer();
+          });
         } else {
           // reset
-          passkey = "";
-          qm = false;
+          resetAll();
         }
       }
     });
@@ -43,7 +95,7 @@ class _HomeState extends State<Home> {
 
   onLogin() {
     setState(() {
-      qm = true;
+      mode = "server";
     });
     Future.delayed(const Duration(milliseconds: 100), () {
       // Do something
@@ -81,7 +133,7 @@ class _HomeState extends State<Home> {
   }
 
   Widget messageOrInput(w) {
-    if (qm) {
+    if (mode == "server") {
       return SizedBox(
         width: w / 2,
         height: 50,
@@ -116,20 +168,22 @@ class _HomeState extends State<Home> {
     w -= 20;
 
     Widget? fab;
-    if (!qm) {
+    if (allowServerLogin && mode == "idk") {
       fab = FloatingActionButton.extended(
           onPressed: onLogin, label: const Text("Login as Quiz Master"));
     }
 
     return Scaffold(
-        appBar: AppBar(title: const Text("Buzzer - Waiting for Quiz Master")),
+        appBar: AppBar(
+            leading: WIDGETS.heartbeatIcon(alive),
+            title: const Text("Buzzer - Searching...")),
         backgroundColor: Colors.black,
         floatingActionButton: fab,
         body: Center(
             child:
                 Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           messageOrInput(w),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           SizedBox(width: w, height: w, child: WIDGETS.buildRadar())
         ])));
   }

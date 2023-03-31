@@ -45,6 +45,14 @@ class MulticastListener {
       }
     });
   }
+
+  void close() {
+    try {
+      receiver.close();
+    } catch (e) {
+      Log.log("Multicast close error");
+    }
+  }
 }
 /*
 class MulticastBroadcast {
