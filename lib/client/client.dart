@@ -38,9 +38,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   double secondsRemaining = 0;
   bool bellRinging = false;
   bool bellFlashing = false;
-  MulticastListener mlistener = MulticastListener();
   Timer? multicastCheckTimer;
-  DateTime lastMulticastUpdateTime = DateTime.now();
   bool alive = false;
   Map? topBuzzers;
 
@@ -49,7 +47,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     Log.log('Client InitState');
     userController.text = "Raj";
 //    connectToServerAndListen();
-    mlistener.listen(onFoundServerAddress);
     startMulticastCheckTimer();
     super.initState();
   }
@@ -68,10 +65,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   onMulticastCheckTimer(_) async {
-    Duration d = DateTime.now().difference(lastMulticastUpdateTime);
-    if (d.inSeconds > 3) {
+    Duration d = DateTime.now().difference(MulticastListenerNew.lastUpdateTime);
+    final bool newAlive = d.inSeconds <= 3;
+    setState(() {
+      alive = newAlive;
+    });
+
+    final ip = MulticastListenerNew.serverData;
+    if (ip.isNotEmpty && state == BuzzState.clientWaitingForServer) {
       setState(() {
-        alive = false;
+        serverIP = ip;
+        connectToServerAndListen();
       });
     }
   }
@@ -123,6 +127,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     socket.emit('msg', [s]);
   }
 
+/*
   void onFoundServerAddress(String ip) {
     Log.log("Found server IP: $ip");
     if (ip.isNotEmpty) {
@@ -140,6 +145,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       }
     }
   }
+*/
 
   void connectToServer() {
     //const ip = "localhost";
@@ -383,7 +389,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   Widget buildWaitingForCmd() {
     if (topBuzzers != null) {
-
       final int count = topBuzzers!["count"] ?? 0;
       if (count == 0) {
         return const Center(child: Text("No one buzzed this time"));
