@@ -54,6 +54,38 @@ class MulticastListener {
     }
   }
 }
+
+class MulticastListenerNew {
+  static String serverData = "";
+  static late UDP receiver;
+  static DateTime lastUpdateTime = DateTime.now();
+
+  static init() async {
+    final Endpoint multicastEndpoint = Endpoint.multicast(
+        InternetAddress(CONST.multicastIP),
+        port: Port(CONST.multicastPort));
+
+    receiver = await UDP.bind(multicastEndpoint);
+    receiver.asStream().listen((Datagram? d) {
+      if (d != null) {
+        var str = String.fromCharCodes(d.data);
+
+        Log.log('Received multicastNew: $str');
+        lastUpdateTime = DateTime.now();
+        serverData = str;
+      }
+    });
+  }
+
+  static exit() {
+    try {
+      receiver.close();
+    } catch (e) {
+      Log.log("MulticastNew close error");
+    }
+  }
+}
+
 /*
 class MulticastBroadcast {
   Future<RawDatagramSocket> socket =

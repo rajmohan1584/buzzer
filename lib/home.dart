@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/util/multicast.dart';
@@ -20,18 +22,21 @@ class _HomeState extends State<Home> {
   final maxlen = 6;
   String passkey = "";
   final secretKey = "135246";
-  MulticastListener mlistener = MulticastListener();
   bool alive = false;
+  Timer? timer;
+  int timerCounter = 0;
 
   @override
   void initState() {
-    mlistener.listen(onFoundQuizMaster);
+    MulticastListenerNew.init();
+    startTimer();
     super.initState();
     resetAll();
   }
 
   @override
   dispose() {
+    stoptTimer();
     super.dispose();
   }
 
@@ -40,18 +45,52 @@ class _HomeState extends State<Home> {
       passkey = "";
       mode = "idk";
       allowServerLogin = false;
+      timerCounter = 0;
     });
-    Future.delayed(const Duration(seconds: 5), () {
-      setState(() {
-        allowServerLogin = true;
-      });
+  }
+
+  startTimer() {
+    Log.log('Home - StartTimer');
+    stoptTimer();
+    const dur = Duration(seconds: 5);
+    timer = Timer.periodic(dur, onTimer);
+  }
+
+  onTimer(_) async {
+    final serverIp = MulticastListenerNew.serverData;
+    Log.log('Home - OnTimer serverIp:$serverIp');
+
+    setState(() {
+      timerCounter++;
+      if (serverIp.isNotEmpty) {
+        alive = true;
+      }
     });
+
+    // For 10 seconds keep radar spinning
+    if (timerCounter > 2) {
+      // Check if we found a QuizMaster.
+      if (serverIp.isNotEmpty) {
+        stoptTimer();
+        onFoundQuizMaster(serverIp);
+      }
+      if (serverIp.isEmpty) {
+        // This user may be the server. Let him login
+        setState(() {
+          allowServerLogin = true;
+        });
+      }
+    }
+  }
+
+  stoptTimer() {
+    Log.log('Home - StopTimer');
+    timer?.cancel();
   }
 
   void onFoundQuizMaster(String ip) {
     Log.log("onFoundQuizMaster IP: $ip");
     setState(() {
-      alive = true;
       mode = "client";
       Future.delayed(const Duration(milliseconds: 1000), () {
         gotoClient();
@@ -60,6 +99,7 @@ class _HomeState extends State<Home> {
   }
 
   void gotoClient() {
+    // Leave the multicast listner on.
     Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -80,7 +120,7 @@ class _HomeState extends State<Home> {
         if (passkey == secretKey) {
           // success - goto server
           mode = "server";
-          mlistener.close();
+          MulticastListenerNew.exit();
           Future.delayed(const Duration(milliseconds: 1000), () {
             gotoServer();
           });
@@ -153,7 +193,7 @@ class _HomeState extends State<Home> {
           height: 50,
           child:
               Row(mainAxisAlignment: MainAxisAlignment.center, children: const [
-            Text("Waiting For Quiz Master",
+            Text("Searching For Quiz Master...",
                 style: TextStyle(fontSize: 32, color: Color(0xff82fb4c)))
           ]));
     }
@@ -165,7 +205,7 @@ class _HomeState extends State<Home> {
     if (w > MediaQuery.of(context).size.height) {
       w = MediaQuery.of(context).size.height;
     }
-    w -= 20;
+    w -= 50;
 
     Widget? fab;
     if (allowServerLogin && mode == "idk") {
@@ -184,7 +224,8 @@ class _HomeState extends State<Home> {
                 Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           messageOrInput(w),
           const SizedBox(height: 20),
-          SizedBox(width: w, height: w, child: WIDGETS.buildRadar())
+          SizedBox(
+              width: w * 2 / 3, height: w * 2 / 3, child: WIDGETS.buildRadar())
         ])));
   }
 }
