@@ -4,13 +4,11 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/multicast.dart';
 import 'package:buzzer/util/buzz_state.dart';
-import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/util/network.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/log.dart';
-import 'package:socket_io/socket_io.dart';
 
 import '../model/client.dart';
 import '../model/message.dart';
@@ -28,7 +26,6 @@ class BuzzServerScreen extends StatefulWidget {
 class _BuzzServerScreenState extends State<BuzzServerScreen> {
   final BuzzClients clients = BuzzClients();
   BuzzState state = BuzzState.serverWaitingForClients;
-  late final Server server;
   String myIP = "";
   String myWifi = "";
   bool created = false;
@@ -80,7 +77,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     return WillPopScope(
         onWillPop: () async {
-          server.close();
+          // TODO - close multicast
           return true;
         },
         child: Scaffold(
@@ -133,7 +130,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     }
     */
 
-    final name = Text(client.user,
+    final name = Text(client.name,
         style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
     Widget row =
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -164,8 +161,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   Widget buildStatus() {
     switch (state) {
-      case BuzzState.serverWaitingToCreate:
-        return handleServerWaitingToCreate();
       case BuzzState.serverWaitingForClients:
         return handleServerWaitingForClients();
       case BuzzState.clientAreYouReady:
@@ -179,10 +174,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   ///////////////////////////////////////////////////////
   ///
-  Widget handleServerWaitingToCreate() {
-    return WIDGETS.createServerButton(createServerAndListen);
-  }
-
   Future ringBell(BuzzClient c) async {
     AssetSource src = AssetSource("audio/bell.mp3");
     await audioPlayer.play(src);
@@ -248,7 +239,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   onMulticastTimer(_) async {
     try {
       // Send heartbeat
-      final BuzzMsg hb = BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {});
+      final BuzzMsg hb =
+          BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {}, targetId: 'ALL');
       final int bytes = await multicastSender.sendBuzzMsg(hb);
       if (bytes > 0 && !alive) {
         setState(() {
@@ -268,40 +260,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   stopMulticastTimer() {
     multicastTimer?.cancel();
-  }
-
-  //////////////////////////////////////////////////
-  ///
-  void handleNewConnection(Socket client) {
-    Log.log('New Connection');
-    Log.log('Connection from ${client.id}');
-
-    setState(() {
-      BuzzClient? c = clients.add("Unknown", client);
-      if (c != null) {
-        c.created = DateTime.now();
-        c.updated = DateTime.now();
-        c.state = BuzzState.clientWaitingToLogin;
-      }
-    });
-
-    client.on('disconnect', (_) {
-      Log.log('Client left (disconnect)');
-      handleCloseClient(client);
-    });
-    client.on('close', (_) {
-      Log.log('Client left (close)');
-      handleCloseClient(client);
-    });
-    client.on('msg', (data) {
-      Log.log('Server reveived msg: $data');
-      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
-      if (msg == null) {
-        Log.log("error");
-        return;
-      }
-      handleClientMessage(client, msg);
-    });
   }
 
   onClientScoreChange(BuzzClient client, int score) {
@@ -470,6 +428,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 //    return const Center(child: Text("Connected. Waiting for Clients"));
   }
 
+  /*
   // Process Client messages
   void handleClientMessage(Socket client, BuzzMsg msg) {
     Log.log('From Client: ${msg.toSocketMsg()}');
@@ -531,110 +490,61 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       clients.remove(client);
     });
   }
-
-  //
-  void sendMessageToAllClients(BuzzMsg msg) {
-    String s = msg.toSocketMsg();
-    Log.log("sendMessage: $s");
-    //socket.write(s);
-    //List<int> list = utf8.encode(s);
-    //Uint8List bytes = Uint8List.fromList(list);
-    server.emit('msg', [s]);
-  }
+  */
 
   void sendScoreToClient(BuzzClient client) {
     final data = {"score": client.score};
-    final score = BuzzMsg(BuzzCmd.server, BuzzCmd.score, data);
-
-    client.sendMessage(score);
+    final score =
+        BuzzMsg(BuzzCmd.server, BuzzCmd.score, data, targetId: client.id);
+    multicastSender.sendBuzzMsg(score);
   }
 
-  //
   void sendTopBuzzersToAllClients() {
     clients.sortByBuzzedUpdated();
 
     // Get the top buzzedCount clients.
     final data = clients.getTopBuzzedData(buzzedCount.toInt());
 
-    final topBuzzers = BuzzMsg(BuzzCmd.server, BuzzCmd.topBuzzers, data);
-    sendMessageToAllClients(topBuzzers);
-  }
-
-  //
-  void showBuzzerToClient(BuzzClient client) {
-    final showBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
-    client.sendMessage(showBuzz);
-    setState(() {
-      client.buzzedState = "";
-    });
+    final topBuzzers =
+        BuzzMsg(BuzzCmd.server, BuzzCmd.topBuzzers, data, targetId: "ALL");
+    multicastSender.sendBuzzMsg(topBuzzers);
   }
 
   void showBuzzerToAllClients() {
-    /*
-    for (var i = 0; i < clients.length; i++) {
-      showBuzzerToClient(clients[i]);
-    }
-    */
     for (var i = 0; i < clients.length; i++) {
       setState(() {
         clients[i].buzzedState = "";
       });
     }
-    final showBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {});
-    sendMessageToAllClients(showBuzz);
-  }
-
-  //
-  void hideBuzzerToClient(BuzzClient client) {
-    final hideBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {});
-    client.sendMessage(hideBuzz);
+    final showBuzz =
+        BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {}, targetId: 'ALL');
+    multicastSender.sendBuzzMsg(showBuzz);
   }
 
   void hideBuzzerToAllClients() {
-    /*
-    for (var i = 0; i < clients.length; i++) {
-      hideBuzzerToClient(clients[i]);
-    }
-    */
-    final hideBuzz = BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {});
-    sendMessageToAllClients(hideBuzz);
+    final hideBuzz =
+        BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {}, targetId: 'ALL');
+    multicastSender.sendBuzzMsg(hideBuzz);
   }
 
-  //
   void sendPingToClient(BuzzClient client) {
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {});
-    client.sendMessage(ping);
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {}, targetId: client.id);
+    multicastSender.sendBuzzMsg(ping);
   }
 
   void sendPingToAllClients() {
-    /*
-    for (var i = 0; i < clients.length; i++) {
-      sendPingToClient(clients[i]);
-    }
-    */
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {});
-    sendMessageToAllClients(ping);
-  }
-
-  //
-  void sendCountdownToClient(BuzzClient client) {
-    final data = {"sec": roundSecondsRemaining};
-    final countdown = BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data);
-
-    client.sendMessage(countdown);
+    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {}, targetId: 'ALL');
+    multicastSender.sendBuzzMsg(ping);
   }
 
   void sendCountdownToAllClients() {
-    /*
-    for (var i = 0; i < clients.length; i++) {
-      sendCountdownToClient(clients[i]);
-    }
-    */
     final data = {"sec": roundSecondsRemaining};
-    final countdown = BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data);
-    sendMessageToAllClients(countdown);
+    final countdown =
+        BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data, targetId: 'ALL');
+    multicastSender.sendBuzzMsg(countdown);
   }
 
+  /*
   //
   void sendAreYouReadyToClient(BuzzClient client) {
     final areYouReady = BuzzMsg(BuzzCmd.server, BuzzCmd.areYouReady, {});
@@ -651,4 +561,5 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       sendAreYouReadyToClient(clients[i]);
     }
   }
+  */
 }

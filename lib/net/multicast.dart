@@ -48,14 +48,16 @@ class ClientMulticastListener {
       port: Port(CONST.serverMulticastPort));
   late UDP receiver;
 
-  void listen(Function(String) callback) async {
+  void listen(Function(BuzzMsg) callback) async {
     receiver = await UDP.bind(multicastEndpoint);
     receiver.asStream().listen((Datagram? d) {
       if (d != null) {
         var str = String.fromCharCodes(d.data);
-
         Log.log('Received multicast: $str');
-        callback(str);
+        final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+        if (msg != null) {
+          callback(msg);
+        }
       }
     });
   }
@@ -111,14 +113,16 @@ class ServertMulticastListener {
       port: Port(CONST.serverMulticastPort));
   late UDP receiver;
 
-  void listen(Function(String) callback) async {
+  void listen(Function(BuzzMsg) callback) async {
     receiver = await UDP.bind(multicastEndpoint);
     receiver.asStream().listen((Datagram? d) {
       if (d != null) {
-        var str = String.fromCharCodes(d.data);
-
+        final str = String.fromCharCodes(d.data);
         Log.log('Received multicast: $str');
-        callback(str);
+        final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+        if (msg != null) {
+          callback(msg);
+        }
       }
     });
   }

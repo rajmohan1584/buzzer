@@ -1,20 +1,15 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/widets/top_buzzers.dart';
-//import 'package:buzzer/util/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/widgets.dart';
-//import 'dart:io';
-//import 'dart:typed_data';
-// ignore: library_prefixes
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import '../model/command.dart';
+import '../net/multicast.dart';
 
 class BuzzClientScreen extends StatefulWidget {
   const BuzzClientScreen({super.key});
@@ -25,7 +20,7 @@ class BuzzClientScreen extends StatefulWidget {
 
 class _BuzzClientScreenState extends State<BuzzClientScreen>
     with SingleTickerProviderStateMixin {
-  late IO.Socket socket;
+  late String id;
   BuzzState state = BuzzState.clientWaitingForServer;
   String serverIP = "";
   bool connected = false;
@@ -42,11 +37,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   bool alive = false;
   Map? topBuzzers;
 
+  ClientMulticastSender multicastSender = ClientMulticastSender();
+  ClientMulticastListener multicastReceiver = ClientMulticastListener();
+
   @override
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
-//    connectToServerAndListen();
+    multicastSender.init();
+    multicastReceiver.listen(onServerMessage);
     startMulticastCheckTimer();
     super.initState();
   }
@@ -58,209 +57,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     super.dispose();
   }
 
-  startMulticastCheckTimer() {
-    stoptMulticastCheckTimer();
-    const dur = Duration(seconds: 3);
-    multicastCheckTimer = Timer.periodic(dur, onMulticastCheckTimer);
-  }
-
-  onMulticastCheckTimer(_) async {
-    Duration d = DateTime.now().difference(MulticastListenerNew.lastUpdateTime);
-    final bool newAlive = d.inSeconds <= 3;
-    setState(() {
-      alive = newAlive;
-    });
-
-    final ip = MulticastListenerNew.serverData;
-    if (ip.isNotEmpty && state == BuzzState.clientWaitingForServer) {
-      setState(() {
-        serverIP = ip;
-        connectToServerAndListen();
-      });
-    }
-  }
-
-  stoptMulticastCheckTimer() {
-    multicastCheckTimer?.cancel();
-  }
-
-  Future audioTheriyuma() async {
-    AssetSource src = AssetSource("audio/Theriyuma.mp3");
-    await audioPlayer.play(src);
-  }
-
-  Future ringBell() async {
-    AssetSource src = AssetSource("audio/bell.mp3");
-    await audioPlayer.play(src);
-
-    setState(() {
-      bellRinging = true;
-    });
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        bellRinging = false;
-      });
-    });
-  }
-
-  void flashBell() {
-    setState(() {
-      bellFlashing = true;
-    });
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        bellFlashing = false;
-      });
-    });
-  }
-
-  setBuzzState(newState) {
-    Log.log("Setting state to $state");
-    setState(() => state = newState);
-  }
-
-  void sendMessageToServer(BuzzMsg msg) {
-    String s = msg.toSocketMsg();
-    Log.log("sendMessageToServer: $s");
-//    List<int> list = utf8.encode(s);
-//    Uint8List bytes = Uint8List.fromList(list);
-    socket.emit('msg', [s]);
-  }
-
-/*
-  void onFoundServerAddress(String ip) {
-    Log.log("Found server IP: $ip");
-    if (ip.isNotEmpty) {
-      lastMulticastUpdateTime = DateTime.now();
-      if (!alive) {
-        setState(() {
-          alive = true;
-        });
-      }
-      if (state == BuzzState.clientWaitingForServer) {
-        setState(() {
-          serverIP = ip;
-          connectToServerAndListen();
-        });
-      }
-    }
-  }
-*/
-
-  void connectToServer() {
-    //const ip = "localhost";
-    const port = 3000;
-    String url = 'http://$serverIP:$port';
-
-    Log.log('Connecting to server: $url');
-
-    //socket = IO.io(url);
-
-    socket = IO.io(
-        url,
-        IO.OptionBuilder()
-            .setTransports(['websocket']) // for Flutter or Dart VM
-            .disableAutoConnect() // disable auto-connection
-            .build());
-    socket.connect();
-  }
-
-  void connectToServerAndListen() {
-    connectToServer();
-    socket.onConnect((data) {
-      Log.log('Connected to server');
-      setState(() => connected = true);
-      setBuzzState(BuzzState.clientWaitingToLogin);
-    });
-    socket.on('connect', (_) {
-      Log.log('Connected to server');
-      setState(() => connected = true);
-      setBuzzState(BuzzState.clientWaitingToLogin);
-    });
-    socket.on('disconnect', (_) {
-      Log.log('Disconnected from server');
-      socket.destroy();
-      setState(() => connected = false);
-      setBuzzState(BuzzState.clientWaitingToJoin);
-    });
-    socket.on('msg', (data) {
-      Log.log('Client reveived msg: $data');
-      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data[0]);
-      if (msg == null) {
-        Log.log('error');
-        return;
-      }
-
-      handleServerMessage(socket, msg);
-    });
-    socket.on('event', (data) {
-      Log.log('Client reveiced event: $data');
-    });
-  }
-  /*
-  Future<Socket?> connectToServer() async {
-    Log.log('');
-    //final ip = InternetAddress.anyIPv4;
-    //final ip = CONST.iPhoneIp;
-    const ip = "localhost";
-    const port = 5678;
-    try {
-      Log.log('Connecting to server: $ip: $port');
-      return await Socket.connect(ip, port);
-    } catch (e) {
-      Log.log(e.toString());
-    }
-    return null;
-  }
-
-  Future connectToServerAndListen() async {
-    socket = await connectToServer();
-
-    if (socket == null) {
-      setState(() {
-        error = "Unable to connect to server";
-      });
-      return;
-    }
-
-    Log.log(
-        'Connected to: ${socket!.remoteAddress.address}:${socket!.remotePort}');
-
-    // listen for responses from the server
-    socket!.listen(
-      // handle data from the server
-      (Uint8List data) {
-        final BuzzMsg? msg = BuzzMsg.fromSocketMsg(data);
-        if (msg == null) {
-          Log.log('error');
-          return;
-        }
-
-        handleServerMessage(socket!, msg);
-      },
-
-      // handle errors
-      onError: (error) {
-        Log.log(error);
-        socket!.destroy();
-        setState(() => connected = false);
-        setBuzzState(BuzzState.clientWaitingToJoin);
-      },
-
-      // handle server ending connection
-      onDone: () {
-        Log.log('Server left.');
-        socket!.destroy();
-        setState(() => connected = false);
-        setBuzzState(BuzzState.clientWaitingToJoin);
-      },
-    );
-
-    setState(() => connected = true);
-    setBuzzState(BuzzState.clientWaitingToLogin);
-  }
-  */
-
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
@@ -270,7 +66,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     return WillPopScope(
         onWillPop: () async {
-          socket.close();
+          // socket.close();
           return true;
         },
         child: Scaffold(appBar: appBar, body: buildBody()));
@@ -304,6 +100,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildPlayArea() {
+    /*
     if (error.isNotEmpty) {
       return Center(child: Text(error));
     }
@@ -319,8 +116,80 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       default:
         return Text('Bug State: $state');
     }
+    */
+    return const Text('TODO');
   }
 
+  /////////////////////////////////////////////
+  ///
+  startMulticastCheckTimer() {
+    stoptMulticastCheckTimer();
+    const dur = Duration(seconds: 3);
+    multicastCheckTimer = Timer.periodic(dur, onMulticastCheckTimer);
+  }
+
+  onMulticastCheckTimer(_) async {
+    /*
+    Duration d = DateTime.now().difference(MulticastListenerNew.lastUpdateTime);
+    final bool newAlive = d.inSeconds <= 3;
+    setState(() {
+      alive = newAlive;
+    });
+
+    final ip = MulticastListenerNew.serverData;
+    if (ip.isNotEmpty && state == BuzzState.clientWaitingForServer) {
+      setState(() {
+        serverIP = ip;
+        connectToServerAndListen();
+      });
+    }
+    */
+  }
+
+  stoptMulticastCheckTimer() {
+    multicastCheckTimer?.cancel();
+  }
+
+  ///////////////////////////////////////////////
+  ///
+  Future audioTheriyuma() async {
+    AssetSource src = AssetSource("audio/Theriyuma.mp3");
+    await audioPlayer.play(src);
+  }
+
+  Future ringBell() async {
+    AssetSource src = AssetSource("audio/bell.mp3");
+    await audioPlayer.play(src);
+
+    setState(() {
+      bellRinging = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        bellRinging = false;
+      });
+    });
+  }
+
+  void flashBell() {
+    setState(() {
+      bellFlashing = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        bellFlashing = false;
+      });
+    });
+  }
+
+  ///////////////////////////////////////////////
+  ///
+  setBuzzState(newState) {
+    Log.log("Setting state to $state");
+    setState(() => state = newState);
+  }
+
+  /*
   Widget clientWaitingForServer() {
     return const Center(child: Text("Waiting for Server"));
   }
@@ -346,11 +215,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     });
     final loginRequest = BuzzMsg(BuzzCmd.client, BuzzCmd.lgq, data);
     sendMessageToServer(loginRequest);
-    /*
-    String loginMsg = loginRequest.toSocketMsg();
-    Log.log("onLogin: $loginMsg}");
-    socket!.write(loginMsg);
-    */
 
     setBuzzState(BuzzState.clientWaitingForCmd);
   }
@@ -444,6 +308,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
           WIDGETS.yesBuzzer(onBuzzedYes),
         ]));
   }
+  */
 
   /*
   void onBuzzed() {
@@ -453,27 +318,46 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   */
 
   void onBuzzedYes() {
-    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzYes, {});
-    sendMessageToServer(buzz);
+    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzYes, {}, sourceId: id);
+    multicastSender.sendBuzzMsg(buzz);
   }
 
   void onBuzzedNo() {
-    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzNo, {});
-    sendMessageToServer(buzz);
+    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzNo, {}, sourceId: id);
+    multicastSender.sendBuzzMsg(buzz);
   }
 
   void sendPingToServer() {
-    final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {});
-    sendMessageToServer(ping);
+    final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {}, sourceId: id);
+    multicastSender.sendBuzzMsg(ping);
   }
 
-  void sendIamReadyToServer() {
-    final data = {"ready": true};
-    final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.iAmReady, data);
-    sendMessageToServer(ping);
-    setBuzzState(BuzzState.clientReady);
+  /////////////////////////////////////////////////
+  ///
+  onServerMessage(BuzzMsg msg) {
+    // Assert that there is no cross talk.
+    assert(msg.source == BuzzCmd.server);
+
+    // if this message is not for us. Skip
+    if (msg.targetId != id && msg.targetId != 'ALL') return;
+
+    switch (msg.cmd) {
+      case BuzzCmd.newClientResponse:
+        return processNewClient(msg);
+      case BuzzCmd.rejoinClientResponse:
+        return processRejoinClient(msg);
+    }
   }
 
+  processNewClient(BuzzMsg msg) {
+    Log.log('processNewClient');
+  }
+
+  processRejoinClient(BuzzMsg msg) {
+    Log.log('processRejoinClient');
+  }
+
+  /*
   // Process Server messages
   void handleServerMessage(IO.Socket socket, BuzzMsg msg) {
     Log.log('From Server: ${msg.toSocketMsg()}');
@@ -512,6 +396,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       });
     }
   }
+  */
 
   showTopBuzzers(data) {}
 }

@@ -3,30 +3,20 @@ import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/model/command.dart';
 import 'package:buzzer/util/log.dart';
-import 'package:socket_io/socket_io.dart';
 
 class BuzzClient {
-  String user;
+  String name;
   bool iAmReady = false;
   String buzzedState = "";
   int score = 0;
-  final Socket socket;
+  final String id;
   bool bellRinging = false;
   bool bellFlashing = false;
   DateTime created = DateTime.now();
   DateTime updated = DateTime.now();
   BuzzState state = BuzzState.clientWaitingToJoin;
   BuzzMsg? serverMsg;
-  BuzzClient(this.user, this.socket);
-
-  void sendMessage(BuzzMsg msg) {
-    String s = msg.toSocketMsg();
-    Log.log("sendMessage: $s");
-    //socket.write(s);
-    //List<int> list = utf8.encode(s);
-    //Uint8List bytes = Uint8List.fromList(list);
-    socket.emit('msg', [s]);
-  }
+  BuzzClient(this.name, this.id);
 }
 
 class BuzzClients {
@@ -53,47 +43,37 @@ class BuzzClients {
 
   operator [](int i) => clients[i];
 
-  BuzzClient? findByUser(String user) {
-    final index = clients.indexWhere((c) => c.user == user);
+  BuzzClient? findById(String id) {
+    final index = clients.indexWhere((c) => c.id == id);
     if (index == -1) return null;
     return clients[index];
   }
 
-  BuzzClient? findBySocket(Socket socket) {
-    final index = clients.indexWhere((c) => c.socket == socket);
-    if (index == -1) return null;
-    return clients[index];
-  }
-
-  int indexOfSocket(Socket socket) {
+  int indexOfClient(String id) {
     for (var i = 0; i < clients.length; i++) {
-      if (clients[i].socket == socket) {
+      if (clients[i].id == id) {
         return i;
       }
     }
     return -1;
   }
 
-  BuzzClient? add(String user, Socket socket) {
-    if (findByUser(user) != null) {
-      Log.log('Duplicate name $user');
-      return null;
-    }
-    if (findBySocket(socket) != null) {
-      Log.log('Duplicate name $socket');
+  BuzzClient? add(String user, String id) {
+    if (findById(id) != null) {
+      Log.log('Duplicate name $id');
       return null;
     }
 
-    final client = BuzzClient(user, socket);
+    final client = BuzzClient(user, id);
     clients.add(client);
 
     return client;
   }
 
-  void remove(Socket socket) {
-    final index = indexOfSocket(socket);
+  void remove(String id) {
+    final index = indexOfClient(id);
     if (index < 0) {
-      Log.log('Cannot find socket ${socket.toString()}');
+      Log.log('Cannot find id $id');
       return;
     }
 
@@ -150,7 +130,7 @@ class BuzzClients {
     for (var client in clients) {
       if (client.buzzedState == BuzzCmd.buzzYes) {
         i++;
-        buzzed.add({"position": i, "name": client.user});
+        buzzed.add({"position": i, "name": client.name});
         if (i == max) break;
       }
     }
