@@ -5,10 +5,10 @@ import 'package:buzzer/util/constants.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:udp/udp.dart';
 
-class MulticastSender {
+class ServerMulticastSender {
   final Endpoint multicastEndpoint = Endpoint.multicast(
-      InternetAddress(CONST.multicastIP),
-      port: Port(CONST.multicastPort));
+      InternetAddress(CONST.serverMulticastIP),
+      port: Port(CONST.serverMulticastPort));
   late UDP sender;
 
   Future init() async {

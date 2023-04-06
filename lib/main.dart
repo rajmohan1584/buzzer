@@ -10,8 +10,18 @@ import 'package:buzzer/client/client.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/widgets.dart';
 
+import 'model/game_cache.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  bool has = await GameCache.hasCache();
+
+  if (has) {
+    Log.log("Found Game Cache");
+  } else {
+    Log.log("No Game Cache Found");
+  }
+
   /*
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)
       .catchError((e) {
