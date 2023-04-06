@@ -1,10 +1,12 @@
 import 'dart:io';
 //import 'dart:convert';
 
+import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/constants.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:udp/udp.dart';
 
+// Server uses this to send messages.
 class ServerMulticastSender {
   final Endpoint multicastEndpoint = Endpoint.multicast(
       InternetAddress(CONST.serverMulticastIP),
@@ -15,7 +17,7 @@ class ServerMulticastSender {
     sender = await UDP.bind(Endpoint.any());
   }
 
-  Future<int> broadcast(String msg) async {
+  Future<int> send(String msg) async {
     try {
       //Log.log('Sending multicast message: $msg');
       int bytes = await sender.send(msg.codeUnits, multicastEndpoint);
@@ -26,12 +28,17 @@ class ServerMulticastSender {
       rethrow;
     }
   }
+
+  Future<int> sendBuzzMsg(BuzzMsg msg) async {
+    String smsg = msg.toSocketMsg();
+    return await send(smsg);
+  }
 }
 
-class MulticastListener {
+class ServerMulticastListener {
   final Endpoint multicastEndpoint = Endpoint.multicast(
-      InternetAddress(CONST.multicastIP),
-      port: Port(CONST.multicastPort));
+      InternetAddress(CONST.serverMulticastIP),
+      port: Port(CONST.serverMulticastPort));
   late UDP receiver;
 
   void listen(Function(String) callback) async {
@@ -55,15 +62,16 @@ class MulticastListener {
   }
 }
 
-class MulticastListenerNew {
+// Client use this to receive messages.
+class ServerMulticastListenerNew {
   static String serverData = "";
   static late UDP receiver;
   static DateTime lastUpdateTime = DateTime.now();
 
   static init() async {
     final Endpoint multicastEndpoint = Endpoint.multicast(
-        InternetAddress(CONST.multicastIP),
-        port: Port(CONST.multicastPort));
+        InternetAddress(CONST.serverMulticastIP),
+        port: Port(CONST.serverMulticastPort));
 
     receiver = await UDP.bind(multicastEndpoint);
     receiver.asStream().listen((Datagram? d) {
@@ -85,71 +93,3 @@ class MulticastListenerNew {
     }
   }
 }
-
-/*
-class MulticastBroadcast {
-  Future<RawDatagramSocket> socket =
-      RawDatagramSocket.bind(InternetAddress.anyIPv4, 0, ttl: 3);
-
-  void broadcast(String msg) {
-    Log.log('Sending multicast message: $msg');
-    socket.then((socket) {
-      socket.send('$msg\n'.codeUnits, InternetAddress(CONST.multicastIP),
-          CONST.multicastPort);
-    });
-  }
-}
-
-class MulticastListen {
-  Future<RawDatagramSocket> socket =
-      RawDatagramSocket.bind(InternetAddress.anyIPv4, CONST.multicastPort);
-
-  void listen(Function(String) callback) {
-    Log.log('MulticastListen.listen');
-    socket.then((socket) {
-      Log.log('MulticastListen.listen socket.then - JoinMulticast');
-      socket.joinMulticast(InternetAddress(CONST.multicastIP));
-      Log.log('MulticastListen.listen Actually listening');
-      socket.listen((event) {
-        Log.log('MulticastListen.listen event $event');
-        Datagram? d = socket.receive();
-        if (d != null) {
-          var message = String.fromCharCodes(d.data).trim();
-          Log.log('Datagram from ${d.address.address}:${d.port}: $message');
-          callback(message);
-        }
-      });
-    });
-  }
-}
-*/
-  /*
-  static void sendMulticast(String message) {
-    Log.log('Sending multicast message: $message');
-    var socket =
-        RawDatagramSocket.bind(InternetAddress.anyIPv4, CONST.multicastPort);
-    socket.then((socket) {
-      socket.send(utf8.encode(message), InternetAddress(CONST.multicastIP),
-          CONST.multicastPort);
-      socket.close();
-    });
-  }
-
-  static void listenMulticast(Function(String) callback) {
-    var socket =
-        RawDatagramSocket.bind(InternetAddress.anyIPv4, CONST.multicastPort);
-    socket.then((socket) {
-      socket.joinMulticast(InternetAddress(CONST.multicastIP));
-      socket.listen((event) {
-        if (event == RawSocketEvent.read) {
-          var datagram = socket.receive();
-          if (datagram != null) {
-            var message = utf8.decode(datagram.data);
-            Log.log('Received multicast message: $message');
-            callback(message);
-          }
-        }
-      });
-    });
-  }
-  */

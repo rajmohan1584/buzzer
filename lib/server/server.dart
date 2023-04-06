@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:buzzer/server/multicast.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/util/network.dart';
@@ -37,7 +38,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   double roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
-  MulticastSender mbroadcast = MulticastSender();
+  ServerMulticastSender multicastSender = ServerMulticastSender();
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
@@ -46,8 +47,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   void initState() {
     Log.log('Server InitState');
-    mbroadcast.init();
-    createServerAndListen();
+    multicastSender.init();
+    startMulticastTimer();
     super.initState();
   }
 
@@ -123,7 +124,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   onMulticastTimer(_) async {
     try {
-      final int bytes = await mbroadcast.broadcast(myIP);
+      // Send heartbeat
+      final BuzzMsg hb = BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {});
+
+      final int bytes = await multicastSender.sendBuzzMsg(hb);
       if (bytes > 0 && !alive) {
         setState(() {
           alive = true;
@@ -134,39 +138,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       setState(() {
         alive = false;
       });
-      mbroadcast.init();
-      startMulticastTimer();
+      stopMulticastTimer();
+      multicastSender.init();
+      startMulticastTimer(); // Start calls stop?
     }
   }
 
   stopMulticastTimer() {
     multicastTimer?.cancel();
-  }
-
-  void createServerAndListen() async {
-    String ip = await NET.myIP();
-    String wifi = await NET.myWifi();
-
-    setState(() {
-      myIP = ip;
-      myWifi = wifi;
-    });
-
-    //const ip = "localhost";
-    const port = 3000;
-    String url = 'http://$ip:$port';
-
-    Log.log('Creating server: $url');
-    server = Server();
-    Log.log('Creating server: $url');
-    server.on('connection', (client) {
-      handleNewConnection(client);
-    });
-    await server.listen(port);
-
-    Log.log('Server listning on: $url');
-
-    startMulticastTimer();
   }
 
   void handleNewConnection(Socket client) {
