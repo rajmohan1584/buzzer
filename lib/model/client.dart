@@ -1,7 +1,7 @@
 //import 'dart:io';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
-import 'package:buzzer/util/command.dart';
+import 'package:buzzer/model/command.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:socket_io/socket_io.dart';
 

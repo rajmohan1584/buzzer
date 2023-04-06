@@ -1,4 +1,4 @@
-import 'package:buzzer/util/command.dart';
+import 'package:buzzer/model/command.dart';
 import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/heartbeat.dart';
 import 'package:flutter/cupertino.dart';

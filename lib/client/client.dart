@@ -14,7 +14,7 @@ import 'package:buzzer/util/widgets.dart';
 // ignore: library_prefixes
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-import '../util/command.dart';
+import '../model/command.dart';
 
 class BuzzClientScreen extends StatefulWidget {
   const BuzzClientScreen({super.key});

@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:buzzer/server/multicast.dart';
+import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/net/multicast.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/util/network.dart';
@@ -13,8 +14,8 @@ import 'package:socket_io/socket_io.dart';
 
 import '../model/client.dart';
 import '../model/message.dart';
-import '../util/command.dart';
-import '../util/constants.dart';
+import '../model/command.dart';
+import '../model/constants.dart';
 import '../widets/int_spinner.dart';
 
 class BuzzServerScreen extends StatefulWidget {
@@ -39,6 +40,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   bool roundStarted = false;
   late DateTime roundStartTime;
   ServerMulticastSender multicastSender = ServerMulticastSender();
+  ServertMulticastListener multicastReceiver = ServertMulticastListener();
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
@@ -48,6 +50,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void initState() {
     Log.log('Server InitState');
     multicastSender.init();
+    multicastReceiver.listen(onClientMessage);
     startMulticastTimer();
     super.initState();
   }
@@ -60,133 +63,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     super.dispose();
   }
 
-  Future ringBell(BuzzClient c) async {
-    AssetSource src = AssetSource("audio/bell.mp3");
-    await audioPlayer.play(src);
-
-    setState(() {
-      c.bellRinging = true;
-    });
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        c.bellRinging = false;
-      });
-    });
-  }
-
-  void flashBell(BuzzClient c) {
-    setState(() {
-      c.bellFlashing = true;
-    });
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        c.bellFlashing = false;
-      });
-    });
-  }
-
-  startRoundTimer() {
-    stopRoundTimer();
-    const dur = Duration(seconds: 1);
-    roundTimer = Timer.periodic(dur, onRoundTimer);
-    setState(() {
-      roundStartTime = DateTime.now();
-      roundSecondsRemaining = timeoutSeconds;
-      Log.log('startRoundTimer remaining:$roundSecondsRemaining');
-    });
-    onRoundTimer(roundTimer);
-  }
-
-  onRoundTimer(_) {
-    final now = DateTime.now();
-    final duration = now.difference(roundStartTime);
-    setState(() {
-      roundSecondsRemaining = timeoutSeconds - duration.inSeconds;
-      Log.log('onRoundTimer remaining:$roundSecondsRemaining');
-      if (roundSecondsRemaining <= 0) {
-        onStopRound();
-      }
-    });
-    sendCountdownToAllClients();
-  }
-
-  stopRoundTimer() {
-    roundTimer?.cancel();
-  }
-
-  ///////////////////////////
+  ///////////////////////////////////////////
+  // UI
   //
-  startMulticastTimer() {
-    stopMulticastTimer();
-    const dur = Duration(seconds: 1);
-    multicastTimer = Timer.periodic(dur, onMulticastTimer);
-  }
-
-  onMulticastTimer(_) async {
-    try {
-      // Send heartbeat
-      final BuzzMsg hb = BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {});
-
-      final int bytes = await multicastSender.sendBuzzMsg(hb);
-      if (bytes > 0 && !alive) {
-        setState(() {
-          alive = true;
-        });
-      }
-    } catch (e) {
-      Log.log(e);
-      setState(() {
-        alive = false;
-      });
-      stopMulticastTimer();
-      multicastSender.init();
-      startMulticastTimer(); // Start calls stop?
-    }
-  }
-
-  stopMulticastTimer() {
-    multicastTimer?.cancel();
-  }
-
-  void handleNewConnection(Socket client) {
-    Log.log('New Connection');
-    Log.log('Connection from ${client.id}');
-
-    setState(() {
-      BuzzClient? c = clients.add("Unknown", client);
-      if (c != null) {
-        c.created = DateTime.now();
-        c.updated = DateTime.now();
-        c.state = BuzzState.clientWaitingToLogin;
-      }
-    });
-
-    client.on('disconnect', (_) {
-      Log.log('Client left (disconnect)');
-      handleCloseClient(client);
-    });
-    client.on('close', (_) {
-      Log.log('Client left (close)');
-      handleCloseClient(client);
-    });
-    client.on('msg', (data) {
-      Log.log('Server reveived msg: $data');
-      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
-      if (msg == null) {
-        Log.log("error");
-        return;
-      }
-      handleClientMessage(client, msg);
-    });
-  }
-
-  onClientScoreChange(BuzzClient client, int score) {
-    setState(() {
-      client.score = score;
-      sendScoreToClient(client);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
@@ -298,33 +177,169 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     }
   }
 
+  ///////////////////////////////////////////////////////
+  ///
   Widget handleServerWaitingToCreate() {
     return WIDGETS.createServerButton(createServerAndListen);
   }
 
-  Widget handleServerWaitingForClients0() {
-    Widget actions = Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        ElevatedButton(
-            onPressed: sendPingToAllClients, child: const Text("PING")),
-        ElevatedButton(
-            onPressed: sendAreYouReadyToAllClients,
-            child: const Text("ARE YOU READY")),
-      ],
-    );
+  Future ringBell(BuzzClient c) async {
+    AssetSource src = AssetSource("audio/bell.mp3");
+    await audioPlayer.play(src);
 
-    return Center(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-          const Text("Connected"),
-          const SizedBox(height: 20),
-          actions,
-        ]));
-//    return const Center(child: Text("Connected. Waiting for Clients"));
+    setState(() {
+      c.bellRinging = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        c.bellRinging = false;
+      });
+    });
+  }
+
+  void flashBell(BuzzClient c) {
+    setState(() {
+      c.bellFlashing = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        c.bellFlashing = false;
+      });
+    });
+  }
+
+  startRoundTimer() {
+    stopRoundTimer();
+    const dur = Duration(seconds: 1);
+    roundTimer = Timer.periodic(dur, onRoundTimer);
+    setState(() {
+      roundStartTime = DateTime.now();
+      roundSecondsRemaining = timeoutSeconds;
+      Log.log('startRoundTimer remaining:$roundSecondsRemaining');
+    });
+    onRoundTimer(roundTimer);
+  }
+
+  onRoundTimer(_) {
+    final now = DateTime.now();
+    final duration = now.difference(roundStartTime);
+    setState(() {
+      roundSecondsRemaining = timeoutSeconds - duration.inSeconds;
+      Log.log('onRoundTimer remaining:$roundSecondsRemaining');
+      if (roundSecondsRemaining <= 0) {
+        onStopRound();
+      }
+    });
+    sendCountdownToAllClients();
+  }
+
+  stopRoundTimer() {
+    roundTimer?.cancel();
+  }
+
+  /////////////////////////////////////////////////////
+  ///
+  startMulticastTimer() {
+    stopMulticastTimer();
+    const dur = Duration(seconds: 1);
+    multicastTimer = Timer.periodic(dur, onMulticastTimer);
+  }
+
+  onMulticastTimer(_) async {
+    try {
+      // Send heartbeat
+      final BuzzMsg hb = BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {});
+      final int bytes = await multicastSender.sendBuzzMsg(hb);
+      if (bytes > 0 && !alive) {
+        setState(() {
+          alive = true;
+        });
+      }
+    } catch (e) {
+      Log.log(e);
+      setState(() {
+        alive = false;
+      });
+      stopMulticastTimer();
+      multicastSender.init();
+      startMulticastTimer(); // Start calls stop?
+    }
+  }
+
+  stopMulticastTimer() {
+    multicastTimer?.cancel();
+  }
+
+  //////////////////////////////////////////////////
+  ///
+  void handleNewConnection(Socket client) {
+    Log.log('New Connection');
+    Log.log('Connection from ${client.id}');
+
+    setState(() {
+      BuzzClient? c = clients.add("Unknown", client);
+      if (c != null) {
+        c.created = DateTime.now();
+        c.updated = DateTime.now();
+        c.state = BuzzState.clientWaitingToLogin;
+      }
+    });
+
+    client.on('disconnect', (_) {
+      Log.log('Client left (disconnect)');
+      handleCloseClient(client);
+    });
+    client.on('close', (_) {
+      Log.log('Client left (close)');
+      handleCloseClient(client);
+    });
+    client.on('msg', (data) {
+      Log.log('Server reveived msg: $data');
+      final BuzzMsg? msg = BuzzMsg.fromSocketIOMsg(data);
+      if (msg == null) {
+        Log.log("error");
+        return;
+      }
+      handleClientMessage(client, msg);
+    });
+  }
+
+  onClientScoreChange(BuzzClient client, int score) {
+    setState(() {
+      client.score = score;
+      sendScoreToClient(client);
+    });
+  }
+
+  /////////////////////////////////////////////////
+  ///
+  onClientMessage(BuzzMsg msg) {
+    // Assert that there is no cross talk.
+    assert(msg.source == BuzzCmd.client);
+
+    switch (msg.cmd) {
+      case BuzzCmd.newClientRequest:
+        return processNewClient(msg);
+      case BuzzCmd.rejoinClientRequest:
+        return processRejoinClient(msg);
+    }
+  }
+
+  processNewClient(BuzzMsg msg) {
+    assert(msg.cmd == BuzzCmd.newClientRequest);
+
+    final String name = msg.data["name"];
+    GameCache.addNewClient(name);
+    GameCache.dump();
+  }
+
+  processRejoinClient(BuzzMsg msg) {
+    assert(msg.cmd == BuzzCmd.rejoinClientRequest);
+
+    final String id = msg.data["id"];
+    final String name = msg.data["name"];
+    GameCache.addRejoinClient(id, name);
+    GameCache.dump();
   }
 
   void onChangeEnableTimeout(bool enable) {

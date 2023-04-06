@@ -3,6 +3,12 @@ class BuzzCmd {
   static get server => "S"; // Server
   static get board => "B"; // Score Board
 
+  static get newClientRequest => "NCQ";
+  static get rejoinClientRequest => "RCQ";
+
+  static get newClientResponse => "NCR";
+  static get rejoinClientResponse => "RCR";
+
   static get lgq => "LGQ"; // Login Request
   static get lgr => "LGR"; // Login Response
   static get hbq => "HBQ"; // Heartbeat Request
