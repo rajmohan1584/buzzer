@@ -27,6 +27,7 @@ class _HomeState extends State<Home> {
   bool anotherServerIsRunning = false;
   Timer? timer;
   int timerCounter = 0;
+  StreamSubscription<BuzzMsg>? _streamSubscription;
 
   @override
   void initState() {
@@ -50,9 +51,13 @@ class _HomeState extends State<Home> {
       timerCounter = 0;
     });
 
+    _streamSubscription =
+        StaticSingleMultiCast.controller.stream.listen(onServerMessage);
+    /*
     StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);
     });
+    */
   }
 
   /////////////////////////////////////////////////
@@ -82,7 +87,8 @@ class _HomeState extends State<Home> {
       // Check if we found a QuizMaster.
       if (anotherServerIsRunning) {
         Log.log('Another Server is running, GoToClient in a sec');
-        StaticSingleMultiCast.controller.stream.listen(null);
+        _streamSubscription?.cancel();
+        _streamSubscription = null;
         stoptTimer();
         Future.delayed(const Duration(milliseconds: 1000), () {
           gotoClient();
@@ -136,7 +142,8 @@ class _HomeState extends State<Home> {
           // success - goto server
           Log.log('Login success. GoToServer in a sec');
           mode = "server";
-          StaticSingleMultiCast.controller.stream.listen(null);
+          _streamSubscription?.cancel();
+          _streamSubscription = null;
           Future.delayed(const Duration(milliseconds: 1000), () {
             gotoServer();
           });
