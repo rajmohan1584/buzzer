@@ -233,7 +233,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   ///
   startMulticastTimer() {
     stopMulticastTimer();
-    const dur = Duration(seconds: 5);
+    const dur = Duration(seconds: 1);
     multicastTimer = Timer.periodic(dur, onMulticastTimer);
   }
 
@@ -242,7 +242,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       // Send heartbeat
       final BuzzMsg hb =
           BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {}, targetId: 'ALL');
-      final int bytes = StaticSingleMultiCast.sendBuzzMsg(hb);
+      final int bytes = await StaticSingleMultiCast.sendBuzzMsg(hb);
       if (bytes > 0 && !alive) {
         setState(() {
           alive = true;
@@ -253,6 +253,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       setState(() {
         alive = false;
       });
+      stopMulticastTimer(); // Start calls stop?
       startMulticastTimer(); // Start calls stop?
     }
   }

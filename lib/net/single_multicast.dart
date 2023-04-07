@@ -75,12 +75,12 @@ class StaticSingleMultiCast {
     return bytes;
   }
 
-  static int sendBuzzMsg(BuzzMsg msg) {
+  static Future<int> sendBuzzMsg(BuzzMsg msg) async {
     String smsg = msg.toSocketMsg();
     if (msg.cmd != BuzzCmd.hbq) {
       Log.log('StaticSingleMultiCast Sent sendBuzzMsg: $smsg');
     }
-    return send(smsg);
+    return await awaitSend(smsg);
   }
 
   static void flush() {}
