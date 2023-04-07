@@ -11,6 +11,7 @@ import 'package:nanoid/async.dart';
 
 import '../model/command.dart';
 import '../net/multicast.dart';
+import '../net/multicast_client_receiver.dart';
 
 class BuzzClientScreen extends StatefulWidget {
   const BuzzClientScreen({super.key});
@@ -39,7 +40,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   bool firstTime = true;
 
   ClientMulticastSender multicastSender = ClientMulticastSender();
-  ClientMulticastListener multicastReceiver = ClientMulticastListener();
 
   @override
   void initState() {
@@ -142,8 +142,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     // First time.
     if (firstTime) {
       await multicastSender.init();
-      await multicastReceiver.init();
-      await multicastReceiver.listen(onServerMessage);
+      await StaticClientMulticastListener.initListener();
+      StaticClientMulticastListener.setCallback(onServerMessage);
       registerWithServer();
       firstTime = false;
     }

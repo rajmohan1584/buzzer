@@ -6,13 +6,13 @@ class CONST {
 
   // Server sends message out.
   // Each client listens on this address.
-  static String serverMulticastIP = "239.1.2.3";
-  static int serverMulticastPort = 4567;
+  static String serverMulticastIP = "224.0.0.1";
+  static int serverMulticastPort = 2345;
 
   // Server sends message out.
   // Each client listens on this address.
-  static String clientMulticastIP = "239.1.2.4";
-  static int clientMulticastPort = 5678;
+  static String clientMulticastIP = "224.0.0.2";
+  static int clientMulticastPort = 3456;
 
   static int clientMinScore = 0;
   static int clientMaxScore = 9999999;

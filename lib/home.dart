@@ -9,6 +9,7 @@ import 'client/client.dart';
 import 'model/command.dart';
 import 'model/message.dart';
 import 'net/multicast.dart';
+import 'net/multicast_client_receiver.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -27,7 +28,6 @@ class _HomeState extends State<Home> {
   bool anotherServerIsRunning = false;
   Timer? timer;
   int timerCounter = 0;
-  ClientMulticastListener multicastReceiver = ClientMulticastListener();
   bool firstTime = true;
 
   @override
@@ -75,8 +75,8 @@ class _HomeState extends State<Home> {
 
   onTimer(_) async {
     if (firstTime) {
-      await multicastReceiver.init();
-      await multicastReceiver.listen(onServerMessage);
+      await StaticClientMulticastListener.initListener();
+      StaticClientMulticastListener.setCallback(onServerMessage);
       firstTime = false;
     }
     setState(() {
@@ -89,7 +89,7 @@ class _HomeState extends State<Home> {
       if (anotherServerIsRunning) {
         Log.log('Another Server is running, GoToClient');
         stoptTimer();
-        multicastReceiver.close();
+        StaticClientMulticastListener.removeCallback();
         gotoClient();
         //onFoundQuizMaster(serverIp);
       } else {
@@ -141,7 +141,7 @@ class _HomeState extends State<Home> {
           // success - goto server
           Log.log('Login success. GoToServer');
           mode = "server";
-          multicastReceiver.close();
+          StaticClientMulticastListener.removeCallback();
           //MulticastListenerNew.exit();
           gotoServer();
         } else {

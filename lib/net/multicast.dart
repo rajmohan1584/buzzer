@@ -21,7 +21,7 @@ class ServerMulticastSender {
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
-      reusePort: true,
+      //reusePort: true,
       //multicastLoopback: true,
     );
 
@@ -49,52 +49,7 @@ class ServerMulticastSender {
   }
 }
 
-//////////////////////////////////////////////////////
-// Client use this to receive messages from server
-// from serverMulticastIP:serverMulticastPort
-//
-class ClientMulticastListener {
-  var address = InternetAddress(CONST.serverMulticastIP);
-  var port = CONST.serverMulticastPort;
-  late RawDatagramSocket rawSocket;
 
-  Future init() async {
-    rawSocket = await RawDatagramSocket.bind(
-      InternetAddress.anyIPv4,
-      port,
-      reuseAddress: true,
-      reusePort: true,
-      //multicastLoopback: true,
-    );
-
-    rawSocket.joinMulticast(address);
-  }
-
-  Future listen(Function(BuzzMsg) callback) async {
-    rawSocket.listen((event) {
-      if (event == RawSocketEvent.read) {
-        var datagram = rawSocket.receive();
-        if (datagram != null) {
-          final str = String.fromCharCodes(datagram.data);
-          Log.log('ClientMulticastListener Received: $str');
-          final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
-          if (msg != null) {
-            callback(msg);
-          }
-        }
-      }
-    });
-  }
-
-  void close() {
-    try {
-      rawSocket.close();
-      //receiver.socket.close();
-    } catch (e) {
-      Log.log("ClientMulticastListener close error");
-    }
-  }
-}
 
 //////////////////////////////////////////////////////
 // Client use this to send messages to server
@@ -110,7 +65,7 @@ class ClientMulticastSender {
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
-      reusePort: true,
+      //reusePort: true,
       //multicastLoopback: true,
     );
 
@@ -149,7 +104,7 @@ class ServertMulticastListener {
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
-      reusePort: true,
+      //reusePort: true,
       //multicastLoopback: true,
     );
 
