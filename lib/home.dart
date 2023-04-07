@@ -82,7 +82,7 @@ class _HomeState extends State<Home> {
       // Check if we found a QuizMaster.
       if (anotherServerIsRunning) {
         Log.log('Another Server is running, GoToClient in a sec');
-        StaticSingleMultiCast.flush();
+        StaticSingleMultiCast.controller.stream.listen(null);
         stoptTimer();
         Future.delayed(const Duration(milliseconds: 1000), () {
           gotoClient();
@@ -136,7 +136,7 @@ class _HomeState extends State<Home> {
           // success - goto server
           Log.log('Login success. GoToServer in a sec');
           mode = "server";
-          StaticSingleMultiCast.flush();
+          StaticSingleMultiCast.controller.stream.listen(null);
           Future.delayed(const Duration(milliseconds: 1000), () {
             gotoServer();
           });
