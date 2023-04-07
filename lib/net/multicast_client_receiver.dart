@@ -12,17 +12,19 @@ import 'package:udp/udp.dart';
 // Client use this to receive messages from server
 // from serverMulticastIP:serverMulticastPort
 //
-class StaticClientMulticastListenerOld {
+class StaticClientMulticastListener {
   static var address = InternetAddress(CONST.serverMulticastIP);
   static var port = CONST.serverMulticastPort;
   static late RawDatagramSocket rawSocket;
   static Function(BuzzMsg)? callback;
 
   static void setCallback(Function(BuzzMsg) cb) {
+    Log.log('StaticClientMulticastListener - setCallback');
     callback = cb;
   }
 
   static void removeCallback() {
+    Log.log('StaticClientMulticastListener - removeCallback');
     callback = null;
   }
 
@@ -31,7 +33,7 @@ class StaticClientMulticastListenerOld {
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
-      //reusePort: true,
+      reusePort: true,
       //multicastLoopback: true,
     );
 
@@ -62,7 +64,7 @@ class StaticClientMulticastListenerOld {
   }
 }
 
-class StaticClientMulticastListener {
+class StaticClientMulticastListenerold {
   static late UDP receiver;
   static Function(BuzzMsg)? callback;
 
@@ -87,7 +89,7 @@ class StaticClientMulticastListener {
         Log.log('Received multicastNew: $str');
         final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
         if (msg != null && callback != null) {
-          await callback!(msg);
+          //await callback!(msg);
         }
       }
     });

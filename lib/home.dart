@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/util/widgets.dart';
@@ -8,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'client/client.dart';
 import 'model/command.dart';
 import 'model/message.dart';
-import 'net/multicast.dart';
-import 'net/multicast_client_receiver.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -28,7 +27,6 @@ class _HomeState extends State<Home> {
   bool anotherServerIsRunning = false;
   Timer? timer;
   int timerCounter = 0;
-  bool firstTime = true;
 
   @override
   void initState() {
@@ -50,6 +48,10 @@ class _HomeState extends State<Home> {
       anotherServerIsRunning = false;
       allowServerLogin = false;
       timerCounter = 0;
+    });
+
+    StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
+      onServerMessage(msg);
     });
   }
 
@@ -74,24 +76,16 @@ class _HomeState extends State<Home> {
   }
 
   onTimer(_) async {
-    if (firstTime) {
-      await StaticClientMulticastListener.init();
-      StaticClientMulticastListener.setCallback(onServerMessage);
-      firstTime = false;
-    }
-    setState(() {
-      timerCounter++;
-    });
-
     // For 10 seconds keep radar spinning
     if (timerCounter > 2) {
       // Check if we found a QuizMaster.
       if (anotherServerIsRunning) {
-        Log.log('Another Server is running, GoToClient');
+        Log.log('Another Server is running, GoToClient in a sec');
+        StaticSingleMultiCast.flush();
         stoptTimer();
-        StaticClientMulticastListener.removeCallback();
-        gotoClient();
-        //onFoundQuizMaster(serverIp);
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          gotoClient();
+        });
       } else {
         // This user may be the server. Let him login
         setState(() {
@@ -139,11 +133,12 @@ class _HomeState extends State<Home> {
       if (passkey.length == maxlen) {
         if (passkey == secretKey) {
           // success - goto server
-          Log.log('Login success. GoToServer');
+          Log.log('Login success. GoToServer in a sec');
           mode = "server";
-          StaticClientMulticastListener.removeCallback();
-          //MulticastListenerNew.exit();
-          gotoServer();
+          StaticSingleMultiCast.flush();
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            gotoServer();
+          });
         } else {
           // reset
           resetAll();

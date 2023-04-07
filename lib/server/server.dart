@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
-import 'package:buzzer/net/multicast.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/network.dart';
 import 'package:buzzer/util/widgets.dart';
@@ -14,7 +13,7 @@ import '../model/client.dart';
 import '../model/message.dart';
 import '../model/command.dart';
 import '../model/constants.dart';
-import '../net/multicast_server_receiver.dart';
+import '../net/single_multicast.dart';
 import '../widets/int_spinner.dart';
 
 class BuzzServerScreen extends StatefulWidget {
@@ -37,17 +36,20 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   double roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
-  ServerMulticastSender multicastSender = ServerMulticastSender();
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
   bool alive = false;
-  bool firstTime = true;
 
   @override
   void initState() {
     Log.log('Server InitState');
     startMulticastTimer();
+
+    StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
+      onClientMessage(msg);
+    });
+
     super.initState();
   }
 
@@ -236,17 +238,11 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   onMulticastTimer(_) async {
-    if (firstTime) {
-      await multicastSender.init();
-      await StaticServertMulticastListener.initListener();
-      StaticServertMulticastListener.setCallback(onClientMessage);
-      firstTime = true;
-    }
     try {
       // Send heartbeat
       final BuzzMsg hb =
           BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {}, targetId: 'ALL');
-      final int bytes = multicastSender.sendBuzzMsg(hb);
+      final int bytes = StaticSingleMultiCast.sendBuzzMsg(hb);
       if (bytes > 0 && !alive) {
         setState(() {
           alive = true;
@@ -510,7 +506,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     final data = {"score": client.score};
     final score =
         BuzzMsg(BuzzCmd.server, BuzzCmd.score, data, targetId: client.id);
-    multicastSender.sendBuzzMsg(score);
+    StaticSingleMultiCast.sendBuzzMsg(score);
   }
 
   void sendTopBuzzersToAllClients() {
@@ -521,7 +517,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     final topBuzzers =
         BuzzMsg(BuzzCmd.server, BuzzCmd.topBuzzers, data, targetId: "ALL");
-    multicastSender.sendBuzzMsg(topBuzzers);
+    StaticSingleMultiCast.sendBuzzMsg(topBuzzers);
   }
 
   void showBuzzerToAllClients() {
@@ -532,30 +528,30 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     }
     final showBuzz =
         BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {}, targetId: 'ALL');
-    multicastSender.sendBuzzMsg(showBuzz);
+    StaticSingleMultiCast.sendBuzzMsg(showBuzz);
   }
 
   void hideBuzzerToAllClients() {
     final hideBuzz =
         BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {}, targetId: 'ALL');
-    multicastSender.sendBuzzMsg(hideBuzz);
+    StaticSingleMultiCast.sendBuzzMsg(hideBuzz);
   }
 
   void sendPingToClient(BuzzClient client) {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {}, targetId: client.id);
-    multicastSender.sendBuzzMsg(ping);
+    StaticSingleMultiCast.sendBuzzMsg(ping);
   }
 
   void sendPingToAllClients() {
     final ping = BuzzMsg(BuzzCmd.server, BuzzCmd.ping, {}, targetId: 'ALL');
-    multicastSender.sendBuzzMsg(ping);
+    StaticSingleMultiCast.sendBuzzMsg(ping);
   }
 
   void sendCountdownToAllClients() {
     final data = {"sec": roundSecondsRemaining};
     final countdown =
         BuzzMsg(BuzzCmd.server, BuzzCmd.countdown, data, targetId: 'ALL');
-    multicastSender.sendBuzzMsg(countdown);
+    StaticSingleMultiCast.sendBuzzMsg(countdown);
   }
 
   /*

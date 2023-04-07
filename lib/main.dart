@@ -11,6 +11,7 @@ import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/widgets.dart';
 
 import 'model/game_cache.dart';
+import 'net/single_multicast.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,8 @@ void main() async {
       await windowManager.focus();
     });
   }
+
+  StaticSingleMultiCast.initListener();
 
   runZonedGuarded(() {
     runApp(const MyApp());

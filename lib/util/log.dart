@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 class Log {
   static log(Object s) {
     if (kDebugMode) {
+      print("$s");
+      /*
       String context = StackTrace.current.toString();
       int startIndex = context.indexOf("#1") + 2;
       if (startIndex >= 0) {
@@ -18,6 +20,7 @@ class Log {
       }
 
       print("$s $context");
+      */
     }
   }
 }

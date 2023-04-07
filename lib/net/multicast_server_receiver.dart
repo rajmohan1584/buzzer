@@ -31,7 +31,7 @@ class StaticServertMulticastListener {
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
-      //reusePort: true,
+      reusePort: true,
       //multicastLoopback: true,
     );
 

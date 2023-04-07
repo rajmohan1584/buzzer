@@ -10,8 +10,7 @@ import 'package:buzzer/util/widgets.dart';
 import 'package:nanoid/async.dart';
 
 import '../model/command.dart';
-import '../net/multicast.dart';
-import '../net/multicast_client_receiver.dart';
+import '../net/single_multicast.dart';
 
 class BuzzClientScreen extends StatefulWidget {
   const BuzzClientScreen({super.key});
@@ -37,15 +36,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Timer? multicastCheckTimer;
   bool alive = false;
   Map? topBuzzers;
-  bool firstTime = true;
-
-  ClientMulticastSender multicastSender = ClientMulticastSender();
 
   @override
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
     startMulticastCheckTimer();
+
+    StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
+      onServerMessage(msg);
+    });
+
     super.initState();
   }
 
@@ -127,7 +128,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     BuzzMsg addNew =
         BuzzMsg(BuzzCmd.client, BuzzCmd.newClientRequest, {"id": id});
-    multicastSender.sendBuzzMsg(addNew);
+
+    StaticSingleMultiCast.sendBuzzMsg(addNew);
   }
 
   /////////////////////////////////////////////
@@ -139,14 +141,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   onMulticastCheckTimer(_) async {
-    // First time.
-    if (firstTime) {
-      await multicastSender.init();
-      await StaticClientMulticastListener.init();
-      StaticClientMulticastListener.setCallback(onServerMessage);
-      registerWithServer();
-      firstTime = false;
-    }
     /*
     Duration d = DateTime.now().difference(MulticastListenerNew.lastUpdateTime);
     final bool newAlive = d.inSeconds <= 3;
@@ -337,17 +331,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   void onBuzzedYes() {
     final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzYes, {}, sourceId: id);
-    multicastSender.sendBuzzMsg(buzz);
+    StaticSingleMultiCast.sendBuzzMsg(buzz);
   }
 
   void onBuzzedNo() {
     final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzNo, {}, sourceId: id);
-    multicastSender.sendBuzzMsg(buzz);
+    StaticSingleMultiCast.sendBuzzMsg(buzz);
   }
 
   void sendPingToServer() {
     final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {}, sourceId: id);
-    multicastSender.sendBuzzMsg(ping);
+    StaticSingleMultiCast.sendBuzzMsg(ping);
   }
 
   /////////////////////////////////////////////////
