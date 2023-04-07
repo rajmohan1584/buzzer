@@ -4,27 +4,35 @@ import 'dart:io';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/log.dart';
-import 'package:udp/udp.dart';
+
+import '../model/command.dart';
 
 //////////////////////////////////////////////////////
 // Server uses this to send messages to Clients
 // To serverMulticastIP:serverMulticastPort
 //
 class ServerMulticastSender {
-  final Endpoint multicastEndpoint = Endpoint.multicast(
-      InternetAddress(CONST.serverMulticastIP),
-      port: Port(CONST.serverMulticastPort));
-  late UDP sender;
+  var address = InternetAddress(CONST.serverMulticastIP);
+  var port = CONST.serverMulticastPort;
+  late RawDatagramSocket rawSocket;
 
   Future init() async {
-    sender = await UDP.bind(Endpoint.any());
+    rawSocket = await RawDatagramSocket.bind(
+      InternetAddress.anyIPv4,
+      port,
+      reuseAddress: true,
+      reusePort: true,
+      //multicastLoopback: true,
+    );
+
+    rawSocket.joinMulticast(address);
   }
 
   Future<int> send(String msg) async {
     try {
-      //Log.log('Sending multicast message: $msg');
-      int bytes = await sender.send(msg.codeUnits, multicastEndpoint);
-      //Log.log('Sent multicast bytes: $bytes');
+      //Log.log('ServerMulticastSender Sending multicast message: $msg');
+      int bytes = rawSocket.send(msg.codeUnits, address, port);
+      //Log.log('ServerMulticastSender Sent multicast bytes: $bytes');
       return bytes;
     } catch (e) {
       Log.log('Error $e');
@@ -34,6 +42,9 @@ class ServerMulticastSender {
 
   Future<int> sendBuzzMsg(BuzzMsg msg) async {
     String smsg = msg.toSocketMsg();
+    if (msg.cmd != BuzzCmd.hbq) {
+      Log.log('ServerMulticastSender Sent sendBuzzMsg: $smsg');
+    }
     return await send(smsg);
   }
 }
@@ -43,20 +54,33 @@ class ServerMulticastSender {
 // from serverMulticastIP:serverMulticastPort
 //
 class ClientMulticastListener {
-  final Endpoint multicastEndpoint = Endpoint.multicast(
-      InternetAddress(CONST.serverMulticastIP),
-      port: Port(CONST.serverMulticastPort));
-  late UDP receiver;
+  var address = InternetAddress(CONST.serverMulticastIP);
+  var port = CONST.serverMulticastPort;
+  late RawDatagramSocket rawSocket;
 
-  void listen(Function(BuzzMsg) callback) async {
-    receiver = await UDP.bind(multicastEndpoint);
-    receiver.asStream().listen((Datagram? d) {
-      if (d != null) {
-        var str = String.fromCharCodes(d.data);
-        Log.log('Received multicast: $str');
-        final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
-        if (msg != null) {
-          callback(msg);
+  Future init() async {
+    rawSocket = await RawDatagramSocket.bind(
+      InternetAddress.anyIPv4,
+      port,
+      reuseAddress: true,
+      reusePort: true,
+      //multicastLoopback: true,
+    );
+
+    rawSocket.joinMulticast(address);
+  }
+
+  Future listen(Function(BuzzMsg) callback) async {
+    rawSocket.listen((event) {
+      if (event == RawSocketEvent.read) {
+        var datagram = rawSocket.receive();
+        if (datagram != null) {
+          final str = String.fromCharCodes(datagram.data);
+          Log.log('ClientMulticastListener Received: $str');
+          final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+          if (msg != null) {
+            callback(msg);
+          }
         }
       }
     });
@@ -64,9 +88,10 @@ class ClientMulticastListener {
 
   void close() {
     try {
-      receiver.close();
+      rawSocket.close();
+      //receiver.socket.close();
     } catch (e) {
-      Log.log("Multicast close error");
+      Log.log("ClientMulticastListener close error");
     }
   }
 }
@@ -76,20 +101,27 @@ class ClientMulticastListener {
 // To clientMulticastIP:clientMulticastPort
 //
 class ClientMulticastSender {
-  final Endpoint multicastEndpoint = Endpoint.multicast(
-      InternetAddress(CONST.clientMulticastIP),
-      port: Port(CONST.clientMulticastPort));
-  late UDP sender;
+  var address = InternetAddress(CONST.clientMulticastIP);
+  var port = CONST.clientMulticastPort;
+  late RawDatagramSocket rawSocket;
 
   Future init() async {
-    sender = await UDP.bind(Endpoint.any());
+    rawSocket = await RawDatagramSocket.bind(
+      InternetAddress.anyIPv4,
+      port,
+      reuseAddress: true,
+      reusePort: true,
+      //multicastLoopback: true,
+    );
+
+    rawSocket.joinMulticast(address);
   }
+
 
   Future<int> send(String msg) async {
     try {
-      //Log.log('Sending multicast message: $msg');
-      int bytes = await sender.send(msg.codeUnits, multicastEndpoint);
-      //Log.log('Sent multicast bytes: $bytes');
+      //Log.log('ClientMulticastSender Sending multicast message: $msg');
+      int bytes = rawSocket.send(msg.codeUnits, address, port);
       return bytes;
     } catch (e) {
       Log.log('Error $e');
@@ -108,20 +140,33 @@ class ClientMulticastSender {
 // From clientMulticastIP:clientMulticastPort
 //
 class ServertMulticastListener {
-  final Endpoint multicastEndpoint = Endpoint.multicast(
-      InternetAddress(CONST.clientMulticastIP),
-      port: Port(CONST.serverMulticastPort));
-  late UDP receiver;
+  var address = InternetAddress(CONST.clientMulticastIP);
+  var port = CONST.clientMulticastPort;
+  late RawDatagramSocket rawSocket;
 
-  void listen(Function(BuzzMsg) callback) async {
-    receiver = await UDP.bind(multicastEndpoint);
-    receiver.asStream().listen((Datagram? d) {
-      if (d != null) {
-        final str = String.fromCharCodes(d.data);
-        Log.log('Received multicast: $str');
-        final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
-        if (msg != null) {
-          callback(msg);
+  Future init() async {
+    rawSocket = await RawDatagramSocket.bind(
+      InternetAddress.anyIPv4,
+      port,
+      reuseAddress: true,
+      reusePort: true,
+      //multicastLoopback: true,
+    );
+
+    rawSocket.joinMulticast(address);
+  }
+
+  Future listen(Function(BuzzMsg) callback) async {
+    rawSocket.listen((event) {
+      if (event == RawSocketEvent.read) {
+        var datagram = rawSocket.receive();
+        if (datagram != null) {
+          final str = String.fromCharCodes(datagram.data);
+          Log.log('ServertMulticastListener Received: $str');
+          final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+          if (msg != null) {
+            callback(msg);
+          }
         }
       }
     });
@@ -129,9 +174,9 @@ class ServertMulticastListener {
 
   void close() {
     try {
-      receiver.close();
+      rawSocket.close();
     } catch (e) {
-      Log.log("Multicast close error");
+      Log.log("ServertMulticastListener Multicast close error");
     }
   }
 }

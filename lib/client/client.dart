@@ -7,6 +7,7 @@ import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/widgets.dart';
+import 'package:nanoid/async.dart';
 
 import '../model/command.dart';
 import '../net/multicast.dart';
@@ -20,9 +21,8 @@ class BuzzClientScreen extends StatefulWidget {
 
 class _BuzzClientScreenState extends State<BuzzClientScreen>
     with SingleTickerProviderStateMixin {
-  late String id;
+  String id = "";
   BuzzState state = BuzzState.clientWaitingForServer;
-  String serverIP = "";
   bool connected = false;
   final userController = TextEditingController();
   String userName = "";
@@ -36,6 +36,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Timer? multicastCheckTimer;
   bool alive = false;
   Map? topBuzzers;
+  bool firstTime = true;
 
   ClientMulticastSender multicastSender = ClientMulticastSender();
   ClientMulticastListener multicastReceiver = ClientMulticastListener();
@@ -44,8 +45,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
-    multicastSender.init();
-    multicastReceiver.listen(onServerMessage);
     startMulticastCheckTimer();
     super.initState();
   }
@@ -122,6 +121,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   /////////////////////////////////////////////
   ///
+  registerWithServer() async {
+    // The nanoid is always generated the client on a newAdd.
+    final String id = await nanoid();
+
+    BuzzMsg addNew =
+        BuzzMsg(BuzzCmd.client, BuzzCmd.newClientRequest, {"id": id});
+    multicastSender.sendBuzzMsg(addNew);
+  }
+
+  /////////////////////////////////////////////
+  ///
   startMulticastCheckTimer() {
     stoptMulticastCheckTimer();
     const dur = Duration(seconds: 3);
@@ -129,6 +139,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   onMulticastCheckTimer(_) async {
+    // First time.
+    if (firstTime) {
+      await multicastSender.init();
+      await multicastReceiver.init();
+      await multicastReceiver.listen(onServerMessage);
+      registerWithServer();
+      firstTime = false;
+    }
     /*
     Duration d = DateTime.now().difference(MulticastListenerNew.lastUpdateTime);
     final bool newAlive = d.inSeconds <= 3;
@@ -341,15 +359,16 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     // if this message is not for us. Skip
     if (msg.targetId != id && msg.targetId != 'ALL') return;
 
-    switch (msg.cmd) {
-      case BuzzCmd.newClientResponse:
-        return processNewClient(msg);
-      case BuzzCmd.rejoinClientResponse:
-        return processRejoinClient(msg);
+    if (msg.cmd == BuzzCmd.newClientResponse) {
+      return processNewClientResponse(msg);
+    }
+
+    if (msg.cmd == BuzzCmd.rejoinClientResponse) {
+      return processRejoinClient(msg);
     }
   }
 
-  processNewClient(BuzzMsg msg) {
+  processNewClientResponse(BuzzMsg msg) {
     Log.log('processNewClient');
   }
 

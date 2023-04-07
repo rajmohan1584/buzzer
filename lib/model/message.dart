@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:buzzer/model/command.dart';
+import 'package:buzzer/util/log.dart';
 import 'package:intl/intl.dart';
 
 class BuzzMsg {
@@ -23,11 +24,11 @@ class BuzzMsg {
   Map<String, dynamic> data = {};
   BuzzMsg(this.source, this.cmd, this.data,
       {this.sourceId = "", this.targetId = ""}) {
-    if (source = BuzzCmd.server) {
+    if (source == BuzzCmd.server) {
       assert(sourceId.isEmpty);
       assert(targetId.isNotEmpty);
     } else if (source == BuzzCmd.client) {
-      assert(sourceId.isNotEmpty);
+      assert(sourceId.isNotEmpty || cmd == BuzzCmd.newClientRequest);
       assert(targetId.isEmpty);
     } else {
       assert(false);
@@ -51,17 +52,18 @@ class BuzzMsg {
 
   static BuzzMsg? fromMulticastMessage(String msg) {
     if (msg.isEmpty) return null;
-    final List<String> a = msg.split('~');
+    final List<String?> a = msg.split('~');
     if (a.length < 5) {
-      assert(false);
+      //assert(false);
+      Log.log('***** ERROR ***** - fromMulticastMessage - TODO DEbug');
       return null;
     }
 
-    String source = a[0];
-    String cmd = a[1];
-    String sourceId = a[2];
-    String targetId = a[3];
-    Map<String, dynamic> data = json.decode(a[4]);
+    String source = a[0]!;
+    String cmd = a[1]!;
+    String sourceId = a[2] ?? "";
+    String targetId = a[3] ?? "";
+    Map<String, dynamic> data = json.decode(a[4]!);
 
     return BuzzMsg(source, cmd, data, sourceId: sourceId, targetId: targetId);
   }

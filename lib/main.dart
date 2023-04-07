@@ -14,6 +14,8 @@ import 'model/game_cache.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await GameCache.init();
+
   bool has = await GameCache.hasCache();
 
   if (has) {
@@ -21,6 +23,8 @@ void main() async {
   } else {
     Log.log("No Game Cache Found");
   }
+
+  await GameCache.clear();
 
   /*
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)

@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/log.dart';
-import 'package:buzzer/util/multicast.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'client/client.dart';
+import 'model/command.dart';
+import 'model/message.dart';
+import 'net/multicast.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -22,16 +24,17 @@ class _HomeState extends State<Home> {
   final maxlen = 6;
   String passkey = "";
   final secretKey = "135246";
-  bool alive = false;
+  bool anotherServerIsRunning = false;
   Timer? timer;
   int timerCounter = 0;
+  ClientMulticastListener multicastReceiver = ClientMulticastListener();
+  bool firstTime = true;
 
   @override
   void initState() {
-    MulticastListenerNew.init();
     startTimer();
-    super.initState();
     resetAll();
+    super.initState();
   }
 
   @override
@@ -44,37 +47,52 @@ class _HomeState extends State<Home> {
     setState(() {
       passkey = "";
       mode = "idk";
+      anotherServerIsRunning = false;
       allowServerLogin = false;
       timerCounter = 0;
+    });
+  }
+
+  /////////////////////////////////////////////////
+  ///
+  onServerMessage(BuzzMsg msg) {
+    // Assert that there is no cross talk.
+    assert(msg.source == BuzzCmd.server);
+    assert(msg.cmd == BuzzCmd.hbq);
+
+    setState(() {
+      timerCounter++;
+      anotherServerIsRunning = true;
     });
   }
 
   startTimer() {
     Log.log('Home - StartTimer');
     stoptTimer();
-    const dur = Duration(seconds: 5);
+    const dur = Duration(seconds: 2);
     timer = Timer.periodic(dur, onTimer);
   }
 
   onTimer(_) async {
-    final serverIp = MulticastListenerNew.serverData;
-    Log.log('Home - OnTimer serverIp:$serverIp');
-
+    if (firstTime) {
+      await multicastReceiver.init();
+      await multicastReceiver.listen(onServerMessage);
+      firstTime = false;
+    }
     setState(() {
       timerCounter++;
-      if (serverIp.isNotEmpty) {
-        alive = true;
-      }
     });
 
     // For 10 seconds keep radar spinning
     if (timerCounter > 2) {
       // Check if we found a QuizMaster.
-      if (serverIp.isNotEmpty) {
+      if (anotherServerIsRunning) {
+        Log.log('Another Server is running, GoToClient');
         stoptTimer();
-        onFoundQuizMaster(serverIp);
-      }
-      if (serverIp.isEmpty) {
+        multicastReceiver.close();
+        gotoClient();
+        //onFoundQuizMaster(serverIp);
+      } else {
         // This user may be the server. Let him login
         setState(() {
           allowServerLogin = true;
@@ -88,6 +106,7 @@ class _HomeState extends State<Home> {
     timer?.cancel();
   }
 
+  /*
   void onFoundQuizMaster(String ip) {
     Log.log("onFoundQuizMaster IP: $ip");
     setState(() {
@@ -97,6 +116,7 @@ class _HomeState extends State<Home> {
       });
     });
   }
+  */
 
   void gotoClient() {
     // Leave the multicast listner on.
@@ -119,18 +139,17 @@ class _HomeState extends State<Home> {
       if (passkey.length == maxlen) {
         if (passkey == secretKey) {
           // success - goto server
+          Log.log('Login success. GoToServer');
           mode = "server";
-          MulticastListenerNew.exit();
-          Future.delayed(const Duration(milliseconds: 1000), () {
-            gotoServer();
-          });
+          multicastReceiver.close();
+          //MulticastListenerNew.exit();
+          gotoServer();
         } else {
           // reset
           resetAll();
         }
       }
     });
-    Log.log(s);
   }
 
   onLogin() {
@@ -215,7 +234,7 @@ class _HomeState extends State<Home> {
 
     return Scaffold(
         appBar: AppBar(
-            leading: WIDGETS.heartbeatIcon(alive),
+            leading: WIDGETS.heartbeatIcon(anotherServerIsRunning),
             title: const Text("Buzzer - Searching...")),
         backgroundColor: Colors.black,
         floatingActionButton: fab,
