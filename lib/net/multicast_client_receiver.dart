@@ -6,12 +6,13 @@ import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/log.dart';
 
 import '../model/command.dart';
+import 'package:udp/udp.dart';
 
 //////////////////////////////////////////////////////
 // Client use this to receive messages from server
 // from serverMulticastIP:serverMulticastPort
 //
-class StaticClientMulticastListener {
+class StaticClientMulticastListenerOld {
   static var address = InternetAddress(CONST.serverMulticastIP);
   static var port = CONST.serverMulticastPort;
   static late RawDatagramSocket rawSocket;
@@ -36,7 +37,7 @@ class StaticClientMulticastListener {
 
     rawSocket.joinMulticast(address);
 
-    rawSocket.listen((event) {
+    rawSocket.listen((event) async {
       if (event == RawSocketEvent.read) {
         var datagram = rawSocket.receive();
         if (datagram != null) {
@@ -44,7 +45,7 @@ class StaticClientMulticastListener {
           Log.log('ClientMulticastListener Received: $str');
           final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
           if (msg != null && callback != null) {
-            callback!(msg);
+            await callback!(msg);
           }
         }
       }
@@ -57,6 +58,46 @@ class StaticClientMulticastListener {
       //receiver.socket.close();
     } catch (e) {
       Log.log("ClientMulticastListener close error");
+    }
+  }
+}
+
+class StaticClientMulticastListener {
+  static late UDP receiver;
+  static Function(BuzzMsg)? callback;
+
+  static void setCallback(Function(BuzzMsg) cb) {
+    callback = cb;
+  }
+
+  static void removeCallback() {
+    callback = null;
+  }
+
+  static init() async {
+    final Endpoint multicastEndpoint = Endpoint.multicast(
+        InternetAddress(CONST.serverMulticastIP),
+        port: Port(CONST.serverMulticastPort));
+
+    receiver = await UDP.bind(multicastEndpoint);
+    receiver.asStream().listen((Datagram? d) async {
+      if (d != null) {
+        var str = String.fromCharCodes(d.data);
+
+        Log.log('Received multicastNew: $str');
+        final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+        if (msg != null && callback != null) {
+          await callback!(msg);
+        }
+      }
+    });
+  }
+
+  static exit() {
+    try {
+      receiver.close();
+    } catch (e) {
+      Log.log("MulticastNew close error");
     }
   }
 }

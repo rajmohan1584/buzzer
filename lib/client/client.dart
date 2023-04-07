@@ -142,7 +142,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     // First time.
     if (firstTime) {
       await multicastSender.init();
-      await StaticClientMulticastListener.initListener();
+      await StaticClientMulticastListener.init();
       StaticClientMulticastListener.setCallback(onServerMessage);
       registerWithServer();
       firstTime = false;

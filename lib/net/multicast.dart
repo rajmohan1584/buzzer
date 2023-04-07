@@ -28,7 +28,7 @@ class ServerMulticastSender {
     rawSocket.joinMulticast(address);
   }
 
-  Future<int> send(String msg) async {
+  int send(String msg) {
     try {
       //Log.log('ServerMulticastSender Sending multicast message: $msg');
       int bytes = rawSocket.send(msg.codeUnits, address, port);
@@ -40,12 +40,12 @@ class ServerMulticastSender {
     }
   }
 
-  Future<int> sendBuzzMsg(BuzzMsg msg) async {
+  int sendBuzzMsg(BuzzMsg msg) {
     String smsg = msg.toSocketMsg();
     if (msg.cmd != BuzzCmd.hbq) {
       Log.log('ServerMulticastSender Sent sendBuzzMsg: $smsg');
     }
-    return await send(smsg);
+    return send(smsg);
   }
 }
 
@@ -73,7 +73,7 @@ class ClientMulticastSender {
   }
 
 
-  Future<int> send(String msg) async {
+  int send(String msg) {
     try {
       //Log.log('ClientMulticastSender Sending multicast message: $msg');
       int bytes = rawSocket.send(msg.codeUnits, address, port);
@@ -84,54 +84,9 @@ class ClientMulticastSender {
     }
   }
 
-  Future<int> sendBuzzMsg(BuzzMsg msg) async {
+  int sendBuzzMsg(BuzzMsg msg) {
     String smsg = msg.toSocketMsg();
-    return await send(smsg);
+    return send(smsg);
   }
 }
 
-//////////////////////////////////////////////////////
-// Server use this to receive messages frpm client
-// From clientMulticastIP:clientMulticastPort
-//
-class ServertMulticastListener {
-  var address = InternetAddress(CONST.clientMulticastIP);
-  var port = CONST.clientMulticastPort;
-  late RawDatagramSocket rawSocket;
-
-  Future init() async {
-    rawSocket = await RawDatagramSocket.bind(
-      InternetAddress.anyIPv4,
-      port,
-      reuseAddress: true,
-      //reusePort: true,
-      //multicastLoopback: true,
-    );
-
-    rawSocket.joinMulticast(address);
-  }
-
-  Future listen(Function(BuzzMsg) callback) async {
-    rawSocket.listen((event) {
-      if (event == RawSocketEvent.read) {
-        var datagram = rawSocket.receive();
-        if (datagram != null) {
-          final str = String.fromCharCodes(datagram.data);
-          Log.log('ServertMulticastListener Received: $str');
-          final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
-          if (msg != null) {
-            callback(msg);
-          }
-        }
-      }
-    });
-  }
-
-  void close() {
-    try {
-      rawSocket.close();
-    } catch (e) {
-      Log.log("ServertMulticastListener Multicast close error");
-    }
-  }
-}

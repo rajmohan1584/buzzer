@@ -75,7 +75,7 @@ class _HomeState extends State<Home> {
 
   onTimer(_) async {
     if (firstTime) {
-      await StaticClientMulticastListener.initListener();
+      await StaticClientMulticastListener.init();
       StaticClientMulticastListener.setCallback(onServerMessage);
       firstTime = false;
     }

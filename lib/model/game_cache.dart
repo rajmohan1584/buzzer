@@ -37,7 +37,7 @@ class GameCache {
   //////////////////////////////////////////////////////////////////////
   // hasCache
   //
-  static Future<bool> hasCache() async {
+  static bool hasCache() {
     String? sClients = _prefs.getString(_clients);
     if (sClients == null) {
       return false;
@@ -57,7 +57,7 @@ class GameCache {
       count++;
     }
 
-    _prefs.setInt(_count, count);
+    await _prefs.setInt(_count, count);
 
     return count;
   }
@@ -65,10 +65,10 @@ class GameCache {
   //////////////////////////////////////////////////////////////////////
   // hasCache
   //
-  static void dump() async {
+  static void dump() {
     final List<String> clients = getClients();
     // No Game Cache.
-    Log.log("GameDump> Game Cache has `${clients.length} clients.");
+    Log.log("GameDump> Game Cache has ${clients.length} clients.");
 
     for (var cid in clients) {
       final Map<String, dynamic>? client = getClient(cid);
@@ -126,7 +126,7 @@ class GameCache {
     Map<String, dynamic> client = {};
     client[_name] = newName;
     client[_score] = 0;
-    setClient(id, client);
+    await setClient(id, client);
 
     return newName;
   }
@@ -165,7 +165,7 @@ class GameCache {
     // TODO - remove key=id
 
     clients.remove(id);
-    setClients(clients);
+    await setClients(clients);
   }
 
   //////////////////////////////////////////////////////////////////////
