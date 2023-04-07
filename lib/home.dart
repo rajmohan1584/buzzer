@@ -70,13 +70,14 @@ class _HomeState extends State<Home> {
 
   startTimer() {
     Log.log('Home - StartTimer');
-    stoptTimer();
+    //stoptTimer();
     const dur = Duration(seconds: 2);
     timer = Timer.periodic(dur, onTimer);
   }
 
   onTimer(_) async {
     // For 10 seconds keep radar spinning
+    timerCounter++;
     if (timerCounter > 2) {
       // Check if we found a QuizMaster.
       if (anotherServerIsRunning) {
