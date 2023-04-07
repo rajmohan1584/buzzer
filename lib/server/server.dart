@@ -272,7 +272,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   ///
   Future onClientMessage(BuzzMsg msg) async {
     // Assert that there is no cross talk.
-    assert(msg.source == BuzzCmd.client);
+    if (msg.source == BuzzCmd.server) {
+      // Our own message
+      return;
+    }
 
     if (msg.cmd == BuzzCmd.newClientRequest) {
       await processNewClient(msg);

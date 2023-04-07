@@ -347,8 +347,10 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   /////////////////////////////////////////////////
   ///
   onServerMessage(BuzzMsg msg) {
-    // Assert that there is no cross talk.
-    assert(msg.source == BuzzCmd.server);
+    // Receiving our own message.
+    if (msg.source == BuzzCmd.client) {
+      return;
+    }
 
     // if this message is not for us. Skip
     if (msg.targetId != id && msg.targetId != 'ALL') return;
