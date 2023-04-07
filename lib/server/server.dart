@@ -46,7 +46,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     Log.log('Server InitState');
     startMulticastTimer();
 
-    StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
+    StaticSingleMultiCast.controller2.stream.listen((BuzzMsg msg) {
       onClientMessage(msg);
     });
 

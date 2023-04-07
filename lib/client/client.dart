@@ -43,7 +43,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     userController.text = "Raj";
     startMulticastCheckTimer();
 
-    StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
+    StaticSingleMultiCast.controller2.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);
     });
 

@@ -11,7 +11,9 @@ import '../model/command.dart';
 class StaticSingleMultiCast {
   static final address = InternetAddress(CONST.multicastIP);
   static final port = CONST.multicastPort;
-  static final StreamController<BuzzMsg> controller =
+  static final StreamController<BuzzMsg> controller1 =
+      StreamController<BuzzMsg>();
+  static final StreamController<BuzzMsg> controller2 =
       StreamController<BuzzMsg>();
 
   static Future initListener() async {
@@ -37,7 +39,8 @@ class StaticSingleMultiCast {
             Log.log('StaticSingleMultiCast Received: $str');
             final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
             if (msg != null) {
-              controller.add(msg);
+              controller1.add(msg);
+              controller2.add(msg);
             } else {
               Log.log("WTF");
             }
