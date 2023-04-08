@@ -33,7 +33,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   double secondsRemaining = 0;
   bool bellRinging = false;
   bool bellFlashing = false;
-  Timer? multicastCheckTimer;
+  Timer? heartbeatCheckTimer;
+  DateTime lastHeartbeatTime = DateTime.now();
   bool alive = false;
   Map? topBuzzers;
 
@@ -41,7 +42,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   void initState() {
     Log.log('Client InitState');
     userController.text = "Raj";
-    startMulticastCheckTimer();
+    startHeartbeatCheckTimer();
 
     StaticSingleMultiCast.controller2.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);
@@ -122,44 +123,34 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   /////////////////////////////////////////////
   ///
-  registerWithServer() async {
-    // The nanoid is always generated the client on a newAdd.
-    final String id = await nanoid();
-
-    BuzzMsg addNew =
-        BuzzMsg(BuzzCmd.client, BuzzCmd.newClientRequest, {"id": id});
-
-    StaticSingleMultiCast.sendBuzzMsg(addNew);
-  }
-
-  /////////////////////////////////////////////
-  ///
-  startMulticastCheckTimer() {
-    stoptMulticastCheckTimer();
+  startHeartbeatCheckTimer() {
+    stoptHeartbeatCheckTimer();
     const dur = Duration(seconds: 3);
-    multicastCheckTimer = Timer.periodic(dur, onMulticastCheckTimer);
+    heartbeatCheckTimer = Timer.periodic(dur, onHeartbeatCheckTimer);
   }
 
-  onMulticastCheckTimer(_) async {
-    /*
-    Duration d = DateTime.now().difference(MulticastListenerNew.lastUpdateTime);
+  onHeartbeatCheckTimer(_) async {
+    if (id.isEmpty) {
+      // Client just came up.
+      // Register as new client
+      final newId = await nanoid();
+      setState(() {
+        id = newId;
+      });
+
+      BuzzMsg msg =
+          BuzzMsg(BuzzCmd.client, BuzzCmd.newClientRequest, {}, sourceId: id);
+      await StaticSingleMultiCast.sendBuzzMsg(msg);
+    }
+    Duration d = DateTime.now().difference(lastHeartbeatTime);
     final bool newAlive = d.inSeconds <= 3;
     setState(() {
       alive = newAlive;
     });
-
-    final ip = MulticastListenerNew.serverData;
-    if (ip.isNotEmpty && state == BuzzState.clientWaitingForServer) {
-      setState(() {
-        serverIP = ip;
-        connectToServerAndListen();
-      });
-    }
-    */
   }
 
-  stoptMulticastCheckTimer() {
-    multicastCheckTimer?.cancel();
+  stoptHeartbeatCheckTimer() {
+    heartbeatCheckTimer?.cancel();
   }
 
   ///////////////////////////////////////////////
@@ -352,8 +343,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       return;
     }
 
-    // if this message is not for us. Skip
-    if (msg.targetId != id && msg.targetId != 'ALL') return;
+    // We are not the target of this message;
+    if (msg.targetId != id && msg.targetId != 'ALL') {
+      return;
+    }
+
+    if (msg.cmd == BuzzCmd.hbq) {
+      return processHeartbeat(msg);
+    }
 
     if (msg.cmd == BuzzCmd.newClientResponse) {
       return processNewClientResponse(msg);
@@ -364,8 +361,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     }
   }
 
+  processHeartbeat(BuzzMsg msg) {
+    lastHeartbeatTime = DateTime.now();
+  }
+
   processNewClientResponse(BuzzMsg msg) {
-    Log.log('processNewClient');
+    Log.log('processNewClient ${msg.toSocketMsg()}');
+    setState(() {
+      userName = msg.data["name"] ?? "Unknown";
+    });
   }
 
   processRejoinClient(BuzzMsg msg) {
