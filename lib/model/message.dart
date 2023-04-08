@@ -28,7 +28,7 @@ class BuzzMsg {
       assert(sourceId.isEmpty);
       assert(targetId.isNotEmpty);
     } else if (source == BuzzCmd.client) {
-      assert(sourceId.isNotEmpty || cmd == BuzzCmd.newClientRequest);
+      assert(sourceId.isNotEmpty);
       assert(targetId.isEmpty);
     } else {
       assert(false);

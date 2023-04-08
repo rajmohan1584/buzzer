@@ -168,6 +168,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Future ringBell() async {
+    audioPlayer.release();
     AssetSource src = AssetSource("audio/bell.mp3");
     await audioPlayer.play(src);
 
@@ -359,6 +360,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       return processHeartbeat(msg);
     }
 
+    if (msg.cmd == BuzzCmd.ping) {
+      return processPing();
+    }
+
+    if (msg.cmd == BuzzCmd.pong) {
+      return flashBell();
+    }
+
     if (msg.cmd == BuzzCmd.newClientResponse) {
       return processNewClientResponse(msg);
     }
@@ -368,11 +377,22 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     }
   }
 
+  processPing() {
+    // Server sent a ping.
+    ringBell();
+    final hb = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {}, sourceId: id);
+    StaticSingleMultiCast.sendBuzzMsg(hb);
+  }
+
   processHeartbeat(BuzzMsg msg) {
     lastHeartbeatTime = DateTime.now();
 
-    final hb = BuzzMsg(BuzzCmd.client, BuzzCmd.hbr, {}, sourceId: id);
-    StaticSingleMultiCast.sendBuzzMsg(hb);
+    // Race condition.
+    // The client object is created but not registered and we dont have an ID.
+    if (id.isNotEmpty) {
+      final hb = BuzzMsg(BuzzCmd.client, BuzzCmd.hbr, {}, sourceId: id);
+      StaticSingleMultiCast.sendBuzzMsg(hb);
+    }
   }
 
   processNewClientResponse(BuzzMsg msg) {
