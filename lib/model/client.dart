@@ -17,6 +17,12 @@ class BuzzClient {
   BuzzState state = BuzzState.clientWaitingToJoin;
   BuzzMsg? serverMsg;
   BuzzClient(this.name, this.id);
+  bool alive = true;
+
+  performHealthCheck() {
+    Duration d = DateTime.now().difference(updated);
+    alive = d.inSeconds <= 3;
+  }
 }
 
 class BuzzClients {
@@ -56,6 +62,12 @@ class BuzzClients {
       }
     }
     return -1;
+  }
+
+  performHealthCheck() {
+    for (var c in clients) {
+      c.performHealthCheck();
+    }
   }
 
   BuzzClient? add(String user, String id) {

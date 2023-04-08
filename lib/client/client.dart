@@ -48,6 +48,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       onServerMessage(msg);
     });
 
+    registerUs();
+
     super.initState();
   }
 
@@ -121,15 +123,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     return const Text('TODO');
   }
 
-  /////////////////////////////////////////////
+  ///////////////////////////////////////////
   ///
-  startHeartbeatCheckTimer() {
-    stoptHeartbeatCheckTimer();
-    const dur = Duration(seconds: 3);
-    heartbeatCheckTimer = Timer.periodic(dur, onHeartbeatCheckTimer);
-  }
-
-  onHeartbeatCheckTimer(_) async {
+  void registerUs() async {
     if (id.isEmpty) {
       // Client just came up.
       // Register as new client
@@ -142,6 +138,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
           BuzzMsg(BuzzCmd.client, BuzzCmd.newClientRequest, {}, sourceId: id);
       await StaticSingleMultiCast.sendBuzzMsg(msg);
     }
+  }
+
+  /////////////////////////////////////////////
+  ///
+  startHeartbeatCheckTimer() {
+    stoptHeartbeatCheckTimer();
+    const dur = Duration(seconds: 3);
+    heartbeatCheckTimer = Timer.periodic(dur, onHeartbeatCheckTimer);
+  }
+
+  onHeartbeatCheckTimer(_) async {
     Duration d = DateTime.now().difference(lastHeartbeatTime);
     final bool newAlive = d.inSeconds <= 3;
     setState(() {
@@ -363,6 +370,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   processHeartbeat(BuzzMsg msg) {
     lastHeartbeatTime = DateTime.now();
+
+    final hb = BuzzMsg(BuzzCmd.client, BuzzCmd.hbr, {}, sourceId: id);
+    StaticSingleMultiCast.sendBuzzMsg(hb);
   }
 
   processNewClientResponse(BuzzMsg msg) {
