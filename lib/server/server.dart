@@ -5,6 +5,7 @@ import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/model/server_settings.dart';
 import 'package:buzzer/server/client_detail.dart';
 import 'package:buzzer/server/helper.dart';
+import 'package:buzzer/server/server_settings.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
@@ -420,7 +421,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         no = counts[4],
         pending = counts[5];
 
-    Widget status = Row(
+    Widget statusRow = Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -429,27 +430,37 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.nameValue("டெட்", "$dead"),
           WIDGETS.nameValue("தெரியும்", "$yes/${settings.buzzedCount}"),
           WIDGETS.nameValue("தெரியாது", "$no"),
-          WIDGETS.nameValue("சிந்தனை", "$pending"),
+          WIDGETS.nameValue("Nota", "$pending"),
         ]);
 
-    Widget buttons = Row(
+    final settingsSegue = GestureDetector(
+        onTap: () => {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ServerSettingsScreen(settings)))
+            },
+        child: const Icon(CupertinoIcons.right_chevron));
+
+    Widget actionsRow = Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           buildStartStop(),
           WIDGETS.buildCountdownTime(roundSecondsRemaining),
           WIDGETS.button("PING", sendPingToAllClients),
+          settingsSegue
         ]);
 
     final child = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          status,
+          statusRow,
           const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
           const SizedBox(height: 5),
-          buttons
+          actionsRow
         ]);
 
     return Card(

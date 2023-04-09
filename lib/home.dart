@@ -78,14 +78,15 @@ class _HomeState extends State<Home> {
   startTimer() {
     Log.log('Home - StartTimer');
     //stoptTimer();
-    const dur = Duration(seconds: 2);
+    //const dur = Duration(seconds: 2);
+    const dur = Duration(milliseconds: 100);
     timer = Timer.periodic(dur, onTimer);
   }
 
   onTimer(_) async {
     // For 10 seconds keep radar spinning
     timerCounter++;
-    if (timerCounter > 2) {
+    if (timerCounter >= 1) {
       // Check if we found a QuizMaster.
       if (anotherServerIsRunning) {
         Log.log('Another Server is running, GoToClient in a sec');
@@ -158,7 +159,6 @@ class _HomeState extends State<Home> {
   }
 
   onLogin() {
-
     if (testMode) {
       Log.log('Skip Login. GoToServer in a sec');
       _streamSubscription?.cancel();
