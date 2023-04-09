@@ -260,8 +260,8 @@ class WIDGETS {
       String text,
       bool switchValue,
       void Function(bool) onSwitchChanged,
-      double inputValue,
-      void Function(double) onInputChanged) {
+      int inputValue,
+      void Function(int) onInputChanged) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -275,7 +275,7 @@ class WIDGETS {
         Expanded(flex: 3, child: Text(text)),
         Expanded(
             flex: 2,
-            child: IntSpinner(inputValue.toInt(), 1, 60, onInputChanged)),
+            child: IntSpinner(inputValue, 1, 60, onInputChanged)),
       ],
     );
   }
@@ -309,10 +309,10 @@ class WIDGETS {
     );
   }
 
-  static Widget buildCountdownTime(double sec) {
+  static Widget buildCountdownTime(int sec) {
     final Color color = sec > 5 ? Colors.black : Colors.red;
     return Text(
-      FMT.sec(sec),
+      FMT.sec(sec.toDouble()),
       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: color),
     );
   }

@@ -37,7 +37,7 @@ class ServerHelper {
               client.score,
               CONST.clientMinScore,
               CONST.clientMaxScore,
-              (double v) => {onClientScoreChange!(client, v.toInt())})),
+              (int v) => {onClientScoreChange!(client, v)})),
     ]);
 
     final Color color = client.alive ? Colors.greenAccent : Colors.redAccent;

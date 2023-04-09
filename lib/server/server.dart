@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/model/server_settings.dart';
 import 'package:buzzer/server/client_detail.dart';
 import 'package:buzzer/server/helper.dart';
 import 'package:buzzer/util/buzz_state.dart';
-import 'package:buzzer/util/network.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,9 +15,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../model/client.dart';
 import '../model/message.dart';
 import '../model/command.dart';
-import '../model/constants.dart';
 import '../net/single_multicast.dart';
-import '../widets/int_spinner.dart';
 
 class BuzzServerScreen extends StatefulWidget {
   const BuzzServerScreen({super.key});
@@ -32,18 +30,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   String myIP = "";
   String myWifi = "";
   bool created = false;
-  bool enableTimeout = true;
-  double timeoutSeconds = 10;
-  bool enableBuzzed = true;
-  double buzzedCount = 3;
-  double roundSecondsRemaining = 10;
+  int roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
   bool serverAlive = false;
-  String viewMode = "grid";
+  ServerSettings settings = ServerSettings();
 
   @override
   void initState() {
@@ -122,7 +116,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     final availableHt =
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
-    final topPanelHeight = availableHt * 0.6;
+    final topPanelHeight = availableHt * 0.75;
     final topPanelWidth = MediaQuery.of(context).size.width;
 
     return WillPopScope(
@@ -145,7 +139,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         ),
       ),
       const Divider(
-        height: 2,
+        height: 5,
+        color: Colors.grey,
       ),
       Padding(
         padding: const EdgeInsets.all(8.0),
@@ -161,7 +156,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       return Center(child: WIDGETS.waitingForClients());
     }
 
-    if (viewMode == "grid") {
+    if (settings.viewMode == "grid") {
       return GridView.builder(
           itemCount: clients.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -298,13 +293,15 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
   }
 
+  ///////////////////////////////////////////////////////
+  ///
   startRoundTimer() {
     stopRoundTimer();
     const dur = Duration(seconds: 1);
     roundTimer = Timer.periodic(dur, onRoundTimer);
     setState(() {
       roundStartTime = DateTime.now();
-      roundSecondsRemaining = timeoutSeconds;
+      roundSecondsRemaining = settings.timeoutSeconds;
       Log.log('startRoundTimer remaining:$roundSecondsRemaining');
     });
     onRoundTimer(roundTimer);
@@ -314,7 +311,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     final now = DateTime.now();
     final duration = now.difference(roundStartTime);
     setState(() {
-      roundSecondsRemaining = timeoutSeconds - duration.inSeconds;
+      roundSecondsRemaining = settings.timeoutSeconds - duration.inSeconds;
       Log.log('onRoundTimer remaining:$roundSecondsRemaining');
       if (roundSecondsRemaining <= 0) {
         onStopRound();
@@ -364,34 +361,12 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     multicastTimer?.cancel();
   }
 
+  ///////////////////////////////////////////////////////
+  ///
   onClientScoreChange(BuzzClient client, int score) {
     setState(() {
       client.score = score;
       sendScoreToClient(client);
-    });
-  }
-
-  void onChangeEnableTimeout(bool enable) {
-    setState(() {
-      enableTimeout = enable;
-    });
-  }
-
-  void onTimeoutSecondsChange(double timeout) {
-    setState(() {
-      timeoutSeconds = timeout;
-    });
-  }
-
-  void onChangeEnableBuzzed(bool enable) {
-    setState(() {
-      enableBuzzed = enable;
-    });
-  }
-
-  void onBuzzedCountChange(double count) {
-    setState(() {
-      buzzedCount = count;
     });
   }
 
@@ -444,6 +419,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         yes = counts[3],
         no = counts[4],
         pending = counts[5];
+
     Widget status = Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -451,7 +427,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.nameValue("மொத்தம்", "$total"),
           WIDGETS.nameValue("அலைவ்", "$alive"),
           WIDGETS.nameValue("டெட்", "$dead"),
-          WIDGETS.nameValue("தெரியும்", "$yes"),
+          WIDGETS.nameValue("தெரியும்", "$yes/${settings.buzzedCount}"),
           WIDGETS.nameValue("தெரியாது", "$no"),
           WIDGETS.nameValue("சிந்தனை", "$pending"),
         ]);
@@ -462,20 +438,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         children: [
           buildStartStop(),
           WIDGETS.buildCountdownTime(roundSecondsRemaining),
-          //WIDGETS.button("Show Buzzer", showBuzzerToAllClients),
-          //WIDGETS.button("Hide Buzzer", hideBuzzerToAllClients),
           WIDGETS.button("PING", sendPingToAllClients),
         ]);
-
-    Widget timout = WIDGETS.switchRowWithInput(
-        "Auto Stop Timeout Seconds",
-        enableTimeout,
-        onChangeEnableTimeout,
-        timeoutSeconds,
-        onTimeoutSecondsChange);
-
-    Widget buzzed = WIDGETS.switchRowWithInput("Auto Stop on தெரியும் Count",
-        enableBuzzed, onChangeEnableBuzzed, buzzedCount, onBuzzedCountChange);
 
     final child = Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -485,10 +449,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
           const SizedBox(height: 5),
-          timout,
-          buzzed,
-          const SizedBox(height: 5),
-          const Divider(height: 2, thickness: 2),
           buttons
         ]);
 
@@ -578,7 +538,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     clients.sortByBuzzedUpdated();
 
     // Get the top buzzedCount clients.
-    final data = clients.getTopBuzzedData(buzzedCount.toInt());
+    final data = clients.getTopBuzzedData(settings.buzzedCount);
 
     final topBuzzers =
         BuzzMsg(BuzzCmd.server, BuzzCmd.topBuzzers, data, targetId: "ALL");
