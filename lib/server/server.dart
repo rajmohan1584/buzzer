@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/server/client_detail.dart';
+import 'package:buzzer/server/helper.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/network.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/log.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../model/client.dart';
 import '../model/message.dart';
@@ -39,7 +42,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
-  bool alive = false;
+  bool serverAlive = false;
+  String viewMode = "grid";
 
   @override
   void initState() {
@@ -112,7 +116,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      leading: WIDGETS.heartbeatIcon(alive),
+      leading: WIDGETS.heartbeatIcon(serverAlive),
       title: WIDGETS.appBarTitle(name: "நடுவர்"),
     );
 
@@ -156,56 +160,100 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       // Waiting for clients.
       return Center(child: WIDGETS.waitingForClients());
     }
+
+    if (viewMode == "grid") {
+      return GridView.builder(
+          itemCount: clients.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 1.75,
+          ),
+          itemBuilder: (context, int index) {
+            BuzzClient client = clients.clients[index];
+            // todo - call buildServer
+            return GestureDetector(
+                onTap: () => {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  ClientDetail(client, index)))
+                    },
+                child: buildGridClient(client, index));
+          });
+    }
+
     return ListView.builder(
       itemCount: clients.length,
       itemBuilder: (context, int index) {
         BuzzClient client = clients.clients[index];
         // todo - call buildServer
-        return buildClient(client, index);
+        return GestureDetector(
+            onTap: () => {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ClientDetail(client, index)))
+                },
+            child: buildSlidableClient(client, index));
       },
     );
   }
 
-  Widget buildClient(BuzzClient client, int index) {
-    /*
-    Color color = COLORS.background["gray"]!;
-    if (client.iAmReady) {
-      color = COLORS.background["green"]!;
-    } else {
-      color = COLORS.background["yellow"]!;
-    }
-    */
+  //////////////////////////////////////
+  //
+  Widget buildSlidableClient(client, index) {
+    return Slidable(
+        endActionPane: ActionPane(
+          motion: const DrawerMotion(),
+          children: [
+            SlidableAction(
+                backgroundColor: const Color.fromARGB(255, 199, 152, 152),
+                foregroundColor: Colors.white,
+                onPressed: (_) => {},
+                icon: CupertinoIcons.exclamationmark_circle,
+                label: 'Warning'),
+            SlidableAction(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                onPressed: (_) => {},
+                icon: CupertinoIcons.delete,
+                label: 'Delete')
+          ],
+        ),
+        child: ServerHelper.buildClient(
+            client, index, sendPingToClient, onClientScoreChange));
+  }
 
-    final name = Text(client.name,
-        style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
+  ////////////////////////////////////////////
+  ///
+  Widget buildGridClient(client, index) {
+    final name = Text(client.name, style: const TextStyle(fontSize: 20.0));
 
-    Widget row =
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Expanded(
-          flex: 1,
-          child: WIDGETS.bellIconButton(() => sendPingToClient(client),
-              hShake: client.bellRinging, vShake: client.bellFlashing)),
-      Expanded(flex: 5, child: name),
-      //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
-      Expanded(flex: 2, child: WIDGETS.buzzedStatus(client.buzzedState, index)),
-      Expanded(
-          flex: 3,
-          child: IntSpinner(
-              client.score,
-              CONST.clientMinScore,
-              CONST.clientMaxScore,
-              (double v) => {onClientScoreChange(client, v.toInt())})),
-    ]);
+    final bell = WIDGETS.bellIconButton(() => sendPingToClient(client),
+        hShake: client.bellRinging, vShake: client.bellFlashing);
+    final score =
+        Text("${client.score}", style: const TextStyle(fontSize: 20.0));
 
+    final row = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [bell, score]));
+
+    final column = Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [name, row]);
     final Color color = client.alive ? Colors.greenAccent : Colors.redAccent;
-
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
         elevation: 10.0,
         shape: Border(left: BorderSide(color: color, width: 5)),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: row,
+          child: column,
         ));
   }
 
@@ -293,15 +341,15 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       final BuzzMsg hb =
           BuzzMsg(BuzzCmd.server, BuzzCmd.hbq, {}, targetId: 'ALL');
       final int bytes = await StaticSingleMultiCast.sendBuzzMsg(hb);
-      if (bytes > 0 && !alive) {
+      if (bytes > 0 && !serverAlive) {
         setState(() {
-          alive = true;
+          serverAlive = true;
         });
       }
     } catch (e) {
       Log.log(e);
       setState(() {
-        alive = false;
+        serverAlive = false;
       });
       stopMulticastTimer(); // Start calls stop?
       startMulticastTimer(); // Start calls stop?
@@ -391,17 +439,21 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   Widget handleServerWaitingForClients() {
     final counts = clients.counts;
     final total = counts[0],
-        yes = counts[1],
-        no = counts[2],
-        pending = counts[3];
+        alive = counts[1],
+        dead = counts[2],
+        yes = counts[3],
+        no = counts[4],
+        pending = counts[5];
     Widget status = Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           WIDGETS.nameValue("மொத்தம்", "$total"),
+          WIDGETS.nameValue("அலைவ்", "$alive"),
+          WIDGETS.nameValue("டெட்", "$dead"),
           WIDGETS.nameValue("தெரியும்", "$yes"),
           WIDGETS.nameValue("தெரியாது", "$no"),
-          WIDGETS.nameValue("தூக்கம்", "$pending"),
+          WIDGETS.nameValue("சிந்தனை", "$pending"),
         ]);
 
     Widget buttons = Row(

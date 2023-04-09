@@ -46,6 +46,7 @@ dependencies:
   shared_preferences: ^2.1.0
   nanoid: ^1.0.0
   tuple: ^2.0.1
+  flutter_slidable: ^2.0.0
 
 dev_dependencies:
   # The "flutter_lints" package below contains a set of recommended lints to

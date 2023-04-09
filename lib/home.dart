@@ -10,6 +10,8 @@ import 'client/client.dart';
 import 'model/command.dart';
 import 'model/message.dart';
 
+const testMode = true;
+
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
 
@@ -156,13 +158,26 @@ class _HomeState extends State<Home> {
   }
 
   onLogin() {
+
+    if (testMode) {
+      Log.log('Skip Login. GoToServer in a sec');
+      _streamSubscription?.cancel();
+      _streamSubscription = null;
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        gotoServer();
+      });
+    }
+
     setState(() {
       mode = "server";
     });
-    Future.delayed(const Duration(milliseconds: 100), () {
-      // Do something
-      FocusScope.of(context).requestFocus(focusNode);
-    });
+
+    if (!testMode) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        // Do something
+        FocusScope.of(context).requestFocus(focusNode);
+      });
+    }
   }
 
   Widget passwordInput() {
