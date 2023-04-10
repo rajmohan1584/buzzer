@@ -37,7 +37,7 @@ class _TopBuzzersState extends State<TopBuzzers> {
     final String name = buzzer["name"] ?? "Unk";
 
     return Card(
-        margin: const EdgeInsets.all(50.0),
+        margin: const EdgeInsets.fromLTRB(50.0, 5.0, 50.0, 5.0),
         elevation: 10,
         child: Padding(
           padding: const EdgeInsets.all(25.0),

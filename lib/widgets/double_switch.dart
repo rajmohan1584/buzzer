@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 //////////////////
 ///
@@ -58,6 +59,9 @@ class _DoubleButtonState extends State<DoubleButton> {
   }
 
   buildControls() {
+    Color? sw1Color = controller.sw1Enabled ? Colors.grey : null;
+    Color? sw2Color = controller.sw2Enabled ? Colors.grey : null;
+
     return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -68,12 +72,14 @@ class _DoubleButtonState extends State<DoubleButton> {
               children: [
                 CupertinoSwitch(
                     value: controller.sw1Checked,
+                    thumbColor: sw1Color,
                     onChanged: controller.sw1Enabled ? onSwitch1Changed : null),
                 CupertinoSwitch(
                     value: controller.sw2Checked,
+                    thumbColor: sw2Color,
                     onChanged: controller.sw2Enabled ? onSwitch2Changed : null),
               ]),
-          const Text("Double Button")
+          const Text("Turn Both to start Round")
         ]);
   }
 

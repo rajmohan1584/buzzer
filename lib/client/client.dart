@@ -310,24 +310,34 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildWaitingForCmd() {
+    //final children = <Widget>[];
+
     if (topBuzzers != null) {
       final int count = topBuzzers!["count"] ?? 0;
       if (count == 0) {
-        return const Center(child: Text("No one buzzed this time"));
+        return const Center(
+            child: Text("No one buzzed this time",
+                style: TextStyle(fontSize: 30, color: Colors.redAccent)));
+      } else {
+        /*
+        children.add(Center(
+            child: Text("Top $count Buzzers",
+                style:
+                    const TextStyle(fontSize: 30, color: Colors.greenAccent))));
+        children.add(const Divider(
+          height: 3,
+        ));
+        final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
+        children.add(const SizedBox(height: 20.0));
+        children.add(TopBuzzers(buzzers));
+        */
+        final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
+        return TopBuzzers(buzzers);
       }
-
-      final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
-      return TopBuzzers(buzzers);
+    } else {
+      return const Center(child: Text("Connected. Waiting for Server Cmd"));
     }
-    return const Center(child: Text("Connected. Waiting for Server Cmd"));
   }
-
-  /*
-  void onBuzzed() {
-    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzz, {});
-    sendMessageToServer(buzz);
-  }
-  */
 
   void onBuzzedYes() {
     final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzYes, {}, sourceId: id);
@@ -406,6 +416,12 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       });
       return;
     }
+
+    if (msg.cmd == BuzzCmd.topBuzzers) {
+      setState(() {
+        topBuzzers = msg.data;
+      });
+    }
   }
 
   processPing() {
@@ -477,6 +493,4 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     }
   }
   */
-
-  showTopBuzzers(data) {}
 }

@@ -79,7 +79,7 @@ class _HomeState extends State<Home> {
     Log.log('Home - StartTimer');
     //stoptTimer();
     //const dur = Duration(seconds: 2);
-    const dur = Duration(milliseconds: 100);
+    const dur = Duration(milliseconds: 500);
     timer = Timer.periodic(dur, onTimer);
   }
 
@@ -96,12 +96,14 @@ class _HomeState extends State<Home> {
         Future.delayed(const Duration(milliseconds: 1000), () {
           gotoClient();
         });
-      } else {
+      }
+    }
+
+    if (!anotherServerIsRunning && timerCounter > 3) {
         // This user may be the server. Let him login
         setState(() {
           allowServerLogin = true;
-        });
-      }
+      });
     }
   }
 
