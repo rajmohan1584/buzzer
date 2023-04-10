@@ -74,7 +74,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(CupertinoIcons.rectangle_grid_3x2, size: 50),
+          const Icon(CupertinoIcons.rectangle_grid_2x2, size: 50),
           const Text("Set Display Mode to Grid"),
           CupertinoSwitch(
               value: settings.viewMode == "grid",

@@ -60,7 +60,7 @@ class _TopBuzzersState extends State<TopBuzzers> {
     children.add(WIDGETS.nameWidget(buzzedDelta, value, fontSize: 20.0));
 
     return Card(
-        margin: const EdgeInsets.fromLTRB(25.0, 5.0, 25.0, 5.0),
+        margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
         elevation: 10,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),

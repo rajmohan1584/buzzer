@@ -190,6 +190,14 @@ class WIDGETS {
     );
   }
 
+  static Widget segueIconButton(Function() onPressed) {
+    return IconButton(
+      icon: const Icon(CupertinoIcons.right_chevron),
+      iconSize: 25,
+      onPressed: onPressed,
+    );
+  }
+
   static Widget bellIconButton(Function() onPressed,
       {bool hShake = false, bool vShake = false}) {
     Widget w = IconButton(

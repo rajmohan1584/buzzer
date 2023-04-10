@@ -129,7 +129,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     final availableHt =
         MediaQuery.of(context).size.height - appBar.preferredSize.height;
-    final topPanelHeight = availableHt * 0.75;
+    final topPanelHeight = availableHt * .7;
     final topPanelWidth = MediaQuery.of(context).size.width;
 
     return WillPopScope(
@@ -173,8 +173,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       return GridView.builder(
           itemCount: clients.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 1.25,
+            crossAxisCount: 2,
+            childAspectRatio: 2,
           ),
           itemBuilder: (context, int index) {
             BuzzClient client = clients.clients[index];
@@ -481,7 +481,23 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.nameValue("நோட்டா", "$pending"),
         ]);
 
-    final settingsSegue = GestureDetector(
+    final settingsSegue = WIDGETS.segueIconButton(() async {
+      final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ServerSettingsScreen(settings)));
+
+      // When a BuildContext is used from a StatefulWidget, the mounted property
+      // must be checked after an asynchronous gap.
+      if (!mounted) return;
+
+      if (result != null) {
+        setState(() {
+          settings = result;
+        });
+      }
+    });
+    final settingsSegue2 = GestureDetector(
         onTap: () async {
           final result = await Navigator.push(
               context,
@@ -506,7 +522,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         children: [
           buildStartStop(),
           WIDGETS.buildCountdownTime(roundSecondsRemaining),
-          WIDGETS.button("PING", sendPingToAllClients),
+          WIDGETS.bellIconButton(sendPingToAllClients),
           settingsSegue
         ]);
 

@@ -233,7 +233,7 @@ class _HomeState extends State<Home> {
           child:
               Row(mainAxisAlignment: MainAxisAlignment.center, children: const [
             Text("Searching For Quiz Master...",
-                style: TextStyle(fontSize: 32, color: Color(0xff82fb4c)))
+                style: TextStyle(fontSize: 25, color: Color(0xff82fb4c)))
           ]));
     }
   }
