@@ -1,4 +1,5 @@
 import 'package:buzzer/model/command.dart';
+import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/heartbeat.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,8 +24,8 @@ class WIDGETS {
     return ElevatedButton(onPressed: onPressed, child: const Text("CREATE"));
   }
 
-  static Widget nameText(String name) {
-    return Text(name, style: const TextStyle(fontSize: 14.0));
+  static Widget nameText(String name, {fontSize = 14.0}) {
+    return Text(name, style: TextStyle(fontSize: fontSize));
   }
 
   static Widget valueText(String value, {fontSize = 14.0}) {
@@ -44,6 +45,17 @@ class WIDGETS {
           valueText(value, fontSize: fontSize),
           const SizedBox(height: 5),
           nameText(name)
+        ]);
+  }
+
+  static Widget nameWidget(String name, Widget value, {fontSize = 20.0}) {
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          value,
+          const SizedBox(height: 5),
+          nameText(name, fontSize: fontSize)
         ]);
   }
 
@@ -88,7 +100,7 @@ class WIDGETS {
   }
 
   static Widget appBarTitle({String name = ""}) {
-    return Text("தெரியுமா? $name",
+    return Text("தெரியுமா?  ${CONST.appVersion}  $name",
         style: const TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.bold,
@@ -159,12 +171,7 @@ class WIDGETS {
     String png = "buzzer-null.png";
     if (buzzedState == BuzzCmd.buzzYes) png = "buzzer-yes.png";
     if (buzzedState == BuzzCmd.buzzNo) png = "buzzer-no.png";
-    final img = assetImage(png, width: 40, height: 40);
-    return IconButton(
-      icon: img,
-      iconSize: 50,
-      onPressed: null,
-    );
+    return assetImage(png, width: 40, height: 40);
   }
 
   static Widget plusIconButton(Function() onPressed) {
@@ -202,8 +209,15 @@ class WIDGETS {
         child: w);
   }
 
-  static Widget buzzedStatus(String buzzedState, int index) {
-    return buzzedStateIcon(buzzedState);
+  static Widget buzzedStatus(String buzzedState, Duration? buzzedYesDelta) {
+    final value = buzzedStateIcon(buzzedState);
+    if (buzzedYesDelta == null) {
+      return value;
+    }
+
+    String disp = FMT.buzzedDelta(buzzedYesDelta);
+
+    return nameWidget(disp, value, fontSize: 14.0);
     /*
     Color textColor = Colors.black;
     if (buzzedState.isEmpty) {
@@ -273,9 +287,7 @@ class WIDGETS {
                 child: CupertinoSwitch(
                     value: switchValue, onChanged: onSwitchChanged))),
         Expanded(flex: 3, child: Text(text)),
-        Expanded(
-            flex: 2,
-            child: IntSpinner(inputValue, 1, 60, onInputChanged)),
+        Expanded(flex: 2, child: IntSpinner(inputValue, 1, 60, onInputChanged)),
       ],
     );
   }

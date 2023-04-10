@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:buzzer/home.dart';
+import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
@@ -12,11 +13,15 @@ import 'package:buzzer/util/widgets.dart';
 
 import 'model/game_cache.dart';
 import 'net/single_multicast.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await GameCache.init();
+
+  PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  CONST.appVersion = packageInfo.version;
 
   bool has = GameCache.hasCache();
 
@@ -42,7 +47,7 @@ void main() async {
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
-      //titleBarStyle: TitleBarStyle.hidden,
+      titleBarStyle: TitleBarStyle.normal,
     );
 
     // Use it only after calling `hiddenWindowAtLaunch`

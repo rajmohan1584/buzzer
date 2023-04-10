@@ -2,6 +2,7 @@
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/model/command.dart';
+import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/log.dart';
 
 class BuzzClient {
@@ -14,6 +15,7 @@ class BuzzClient {
   bool bellFlashing = false;
   DateTime created = DateTime.now();
   DateTime updated = DateTime.now();
+  Duration? buzzedYesDelta;
   BuzzState state = BuzzState.clientWaitingToJoin;
   BuzzMsg? serverMsg;
   BuzzClient(this.name, this.id);
@@ -145,14 +147,26 @@ class BuzzClients {
   getTopBuzzedData(int max) {
     final buzzed = [];
     int i = 0;
+    String topId = "";
     for (var client in clients) {
       if (client.buzzedState == BuzzCmd.buzzYes) {
         i++;
-        buzzed.add({"position": i, "name": client.name});
+        if (topId.isEmpty) {
+          topId = client.id;
+        }
+
+        final buzzedDelta = FMT.buzzedDelta(client.buzzedYesDelta);
+
+        buzzed.add({
+          "position": i,
+          "id": client.id,
+          "buzzedDelta": buzzedDelta,
+          "name": client.name
+        });
         if (i == max) break;
       }
     }
-    final data = {"count": i, "buzzers": buzzed};
+    final data = {"count": i, "topId": topId, "buzzers": buzzed};
     return data;
   }
 }

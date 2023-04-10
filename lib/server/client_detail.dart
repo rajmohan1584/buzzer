@@ -5,12 +5,11 @@ import 'package:flutter/material.dart';
 
 class ClientDetail extends StatefulWidget {
   final BuzzClient client;
-  final int index;
   final Function(BuzzClient) sendPingToClient;
   final Function(BuzzClient client, int score) onClientScoreChange;
 
   const ClientDetail(
-      this.client, this.index, this.sendPingToClient, this.onClientScoreChange,
+      this.client, this.sendPingToClient, this.onClientScoreChange,
       {Key? key})
       : super(key: key);
 
@@ -36,7 +35,7 @@ class _ClientDetailState extends State<ClientDetail> {
     return Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(children: [
-          ServerHelper.buildClient(widget.client, widget.index,
+          ServerHelper.buildClient(widget.client,
               widget.sendPingToClient, widget.onClientScoreChange),
           const SizedBox(
             height: 30,

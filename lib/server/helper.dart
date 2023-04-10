@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 class ServerHelper {
   static Widget buildClient(
       BuzzClient client,
-      int index,
       Function(BuzzClient) sendPingToClient,
       Function(BuzzClient client, int score) onClientScoreChange) {
     /*
@@ -30,7 +29,10 @@ class ServerHelper {
               hShake: client.bellRinging, vShake: client.bellFlashing)),
       Expanded(flex: 5, child: name),
       //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
-      Expanded(flex: 2, child: WIDGETS.buzzedStatus(client.buzzedState, index)),
+      Expanded(
+          flex: 2,
+          child:
+              WIDGETS.buzzedStatus(client.buzzedState, client.buzzedYesDelta)),
       Expanded(
           flex: 3,
           child: IntSpinner(
@@ -40,15 +42,24 @@ class ServerHelper {
               (int v) => {onClientScoreChange(client, v)})),
     ]);
 
-    final Color color = client.alive ? Colors.greenAccent : Colors.redAccent;
+    final Color color = client.alive ? Colors.green : Colors.red;
 
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
         elevation: 10.0,
-        shape: Border(left: BorderSide(color: color, width: 5)),
-        child: Padding(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: ClipPath(
+            clipper: ShapeBorderClipper(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+            child: Container(
+                decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: color, width: 12))),
+                child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: row,
-        ));
+                ))));
   }
 }

@@ -37,6 +37,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   int roundSecondsRemaining = 10;
   bool roundStarted = false;
   late DateTime roundStartTime;
+  DateTime? prevYesBuzzTime;
   Timer? roundTimer;
   Timer? multicastTimer;
   final audioPlayer = AudioPlayer();
@@ -67,6 +68,11 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         onClientMessage(msg, client);
         return;
       }
+
+      // Race condition
+      // Client has an id but server has not processed the registration
+      //    to create a client card - and a client's HBR sneeks thru
+      if (msg.cmd == BuzzCmd.hbr) return;
 
       // Here we process and create a new client card.
       assert(msg.cmd == BuzzCmd.newClientRequest);
@@ -178,8 +184,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  ClientDetail(client, index,
+                              builder: (context) => ClientDetail(client,
                                   sendPingToClient, onClientScoreChange)))
                     },
                 child: buildGridClient(client, index));
@@ -196,8 +201,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ClientDetail(client, index,
-                              sendPingToClient, onClientScoreChange)))
+                          builder: (context) => ClientDetail(
+                              client, sendPingToClient, onClientScoreChange)))
                 },
             child: buildSlidableClient(client, index));
       },
@@ -226,7 +231,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           ],
         ),
         child: ServerHelper.buildClient(
-            client, index, sendPingToClient, onClientScoreChange));
+            client, sendPingToClient, onClientScoreChange));
   }
 
   ////////////////////////////////////////////
@@ -238,7 +243,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         hShake: client.bellRinging, vShake: client.bellFlashing);
     final score =
         Text("${client.score}", style: const TextStyle(fontSize: 30.0));
-    final buzzedStatus = WIDGETS.buzzedStatus(client.buzzedState, index);
+    final buzzedStatus =
+        WIDGETS.buzzedStatus(client.buzzedState, client.buzzedYesDelta);
 
     final row = Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -248,20 +254,29 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
             children: [bell, buzzedStatus, score]));
 
     final column = Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [name, row]);
 
-    final Color color = client.alive ? Colors.greenAccent : Colors.redAccent;
+    final Color color = client.alive ? Colors.green : Colors.red;
 
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 5.0),
+        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 5.0),
         elevation: 10.0,
-        shape: Border(left: BorderSide(color: color, width: 5)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: ClipPath(
+            clipper: ShapeBorderClipper(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+            child: Container(
+                decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: color, width: 12))),
         child: Padding(
           padding: const EdgeInsets.all(.0),
           child: column,
-        ));
+                ))));
   }
 
   Widget buildStatus() {
@@ -314,7 +329,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     const dur = Duration(seconds: 1);
     roundTimer = Timer.periodic(dur, onRoundTimer);
     setState(() {
-      roundStartTime = DateTime.now();
       roundSecondsRemaining = settings.timeoutSeconds;
       Log.log('startRoundTimer remaining:$roundSecondsRemaining');
     });
@@ -387,6 +401,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void onStartRound() {
     setState(() {
       roundStarted = true;
+      prevYesBuzzTime = null;
+      roundStartTime = DateTime.now();
     });
     showBuzzerToAllClients();
     startRoundTimer();
@@ -602,6 +618,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     for (var i = 0; i < clients.length; i++) {
       setState(() {
         clients[i].buzzedState = "";
+        clients[i].buzzedYesDelta = null;
       });
     }
     final showBuzz =
@@ -715,6 +732,15 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     setState(() {
       client.buzzedState = msg.cmd;
       client.updated = DateTime.now();
+      if (msg.cmd == BuzzCmd.buzzYes) {
+        if (prevYesBuzzTime == null) {
+          // This is the first buzzer
+          client.buzzedYesDelta = client.updated.difference(roundStartTime);
+        } else {
+          client.buzzedYesDelta = client.updated.difference(prevYesBuzzTime!);
+        }
+        prevYesBuzzTime = client.updated;
+      }
       clients.sortByBuzzedUpdated();
     });
 

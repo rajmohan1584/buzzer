@@ -1,8 +1,11 @@
+import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 
 class TopBuzzers extends StatefulWidget {
   final List<dynamic> buzzers;
-  const TopBuzzers(this.buzzers, {super.key});
+  final String myId;
+  final String topId;
+  const TopBuzzers(this.buzzers, this.myId, this.topId, {super.key});
 
   @override
   State<TopBuzzers> createState() => _TopBuzzersState();
@@ -35,15 +38,38 @@ class _TopBuzzersState extends State<TopBuzzers> {
   Widget buildBuzzer(Map buzzer) {
     final int position = buzzer["position"] ?? -1;
     final String name = buzzer["name"] ?? "Unk";
+    final String id = buzzer["id"] ?? "";
+    final String buzzedDelta = buzzer["buzzedDelta"] ?? "";
+
+    final children = <Widget>[
+      Text(
+        "$position",
+        style: const TextStyle(fontSize: 30),
+      )
+    ];
+
+    if (widget.myId == id) {
+      Widget you = WIDGETS.assetImage("you.png", width: 75, height: 75);
+      children.add(WIDGETS.nameWidget("YOU", you, fontSize: 20.0));
+    }
+
+    children.add(Text(name, style: const TextStyle(fontSize: 30.0)));
+
+    Widget value =
+        WIDGETS.assetImage("Theriyuma-125.png", width: 55, height: 55);
+    children.add(WIDGETS.nameWidget(buzzedDelta, value, fontSize: 20.0));
 
     return Card(
-        margin: const EdgeInsets.fromLTRB(50.0, 5.0, 50.0, 5.0),
+        margin: const EdgeInsets.fromLTRB(25.0, 5.0, 25.0, 5.0),
         elevation: 10,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(25.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text("$position"), Text(name)],
+            children: children,
           ),
         ));
   }

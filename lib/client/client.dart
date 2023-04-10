@@ -78,8 +78,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildBody() {
+    final List<Widget> children = buildPlayArea();
+
     return Column(
-        children: [buildMyself(), const Divider(height: 2), buildPlayArea()]);
+        children: [
+      buildMyself(),
+      const Divider(height: 2),
+      const SizedBox(height: 30),
+      ...children
+    ]);
   }
 
   Widget buildMyself() {
@@ -98,15 +105,18 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     return Card(
         margin: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
         elevation: 10.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: row,
         ));
   }
 
-  Widget buildPlayArea() {
+  List<Widget> buildPlayArea() {
     if (error.isNotEmpty) {
-      return Center(child: Text(error));
+      return [Center(child: Text(error))];
     }
     switch (state) {
       case BuzzState.clientWaitingForServer:
@@ -118,7 +128,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       case BuzzState.clientReady:
         return buildReady();
       default:
-        return Text('Bug State: $state');
+        return [Text('Bug State: $state')];
     }
   }
 
@@ -286,57 +296,57 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
  */
-  Widget clientWaitingForServer() {
-    return const Center(child: Text("Ready To Play"));
+  List<Widget> clientWaitingForServer() {
+    return [const Center(child: Text("Ready To Play"))];
   }
 
-  Widget buildReady() {
-    return Center(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-          const SizedBox(height: 20),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
-            const SizedBox(width: 30),
-            WIDGETS.buildCountdownTime(secondsRemaining)
-          ]),
-          const SizedBox(height: 20),
-          WIDGETS.noBuzzer(onBuzzedNo),
-          const SizedBox(height: 100),
-          WIDGETS.yesBuzzer(onBuzzedYes),
-        ]));
+  List<Widget> buildReady() {
+    return [
+      const SizedBox(height: 20),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
+        const SizedBox(width: 30),
+        WIDGETS.buildCountdownTime(secondsRemaining)
+      ]),
+      const SizedBox(height: 20),
+      WIDGETS.noBuzzer(onBuzzedNo),
+      const SizedBox(height: 100),
+      WIDGETS.yesBuzzer(onBuzzedYes),
+    ];
   }
 
-  Widget buildWaitingForCmd() {
-    //final children = <Widget>[];
+  List<Widget> buildWaitingForCmd() {
+    final children = <Widget>[];
 
     if (topBuzzers != null) {
       final int count = topBuzzers!["count"] ?? 0;
       if (count == 0) {
-        return const Center(
+        children.add(const Center(
             child: Text("No one buzzed this time",
-                style: TextStyle(fontSize: 30, color: Colors.redAccent)));
+                style: TextStyle(fontSize: 30, color: Colors.red))));
       } else {
-        /*
         children.add(Center(
             child: Text("Top $count Buzzers",
                 style:
-                    const TextStyle(fontSize: 30, color: Colors.greenAccent))));
+                    const TextStyle(fontSize: 30, color: Colors.green))));
         children.add(const Divider(
           height: 3,
         ));
         final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
+        final String topId = topBuzzers!["topId"] ?? "";
+
         children.add(const SizedBox(height: 20.0));
-        children.add(TopBuzzers(buzzers));
-        */
+        children.add(TopBuzzers(buzzers, id, topId));
+        /*
         final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
         return TopBuzzers(buzzers);
+        */
       }
     } else {
-      return const Center(child: Text("Connected. Waiting for Server Cmd"));
+      children
+          .add(const Center(child: Text("Connected. Waiting for Server Cmd")));
     }
+    return children;
   }
 
   void onBuzzedYes() {
