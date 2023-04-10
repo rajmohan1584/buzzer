@@ -30,10 +30,10 @@ class BuzzClients {
 
   int get length => clients.length;
 
-//  (int total, int yes, int no, int pending) get counts {
+//  (int total, int yes, int no, int nota) get counts {
   List<int> get counts {
     final int total = clients.length;
-    int alive = 0, dead = 0, yes = 0, no = 0, pending = 0;
+    int alive = 0, dead = 0, yes = 0, no = 0, nota = 0;
     for (var c in clients) {
       if (c.alive) {
         alive++;
@@ -46,11 +46,11 @@ class BuzzClients {
       } else if (c.buzzedState == BuzzCmd.buzzNo) {
         no++;
       } else {
-        pending++;
+        nota++;
       }
     }
 
-    return [total, alive, dead, yes, no, pending];
+    return [total, alive, dead, yes, no, nota];
   }
 
   operator [](int i) => clients[i];

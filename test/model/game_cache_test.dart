@@ -7,7 +7,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   test('Counter value should be incremented', () async {
-    bool has = await GameCache.hasCache();
+    bool has = GameCache.hasCache();
 
     expect(has, false);
   });

@@ -15,9 +15,10 @@ import 'net/single_multicast.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await GameCache.init();
 
-  bool has = await GameCache.hasCache();
+  bool has = GameCache.hasCache();
 
   if (has) {
     Log.log("Found Game Cache");
@@ -65,7 +66,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: Home(),
     );
   }

@@ -12,6 +12,8 @@ import 'package:nanoid/async.dart';
 import '../model/command.dart';
 import '../net/single_multicast.dart';
 
+const bool bellAudioEnabled = false;
+
 class BuzzClientScreen extends StatefulWidget {
   const BuzzClientScreen({super.key});
 
@@ -64,7 +66,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Widget build(BuildContext context) {
     final appBar = AppBar(
       leading: WIDGETS.heartbeatIcon(alive),
-      title: WIDGETS.appBarTitle(name: userName),
+      title: WIDGETS.appBarTitle(name: ""),
     );
 
     return WillPopScope(
@@ -88,7 +90,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           name,
-          WIDGETS.nameValue("SCORE", "$myScore"),
+          WIDGETS.nameValue("SCORE", "$myScore", fontSize: 30.0),
           WIDGETS.bellIconButton(() => sendPingToServer(),
               hShake: bellRinging, vShake: bellFlashing),
         ]);
@@ -103,7 +105,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildPlayArea() {
-
     if (error.isNotEmpty) {
       return Center(child: Text(error));
     }
@@ -166,9 +167,11 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Future ringBell() async {
-    audioPlayer.release();
-    AssetSource src = AssetSource("audio/bell.mp3");
-    await audioPlayer.play(src);
+    if (bellAudioEnabled) {
+      audioPlayer.release();
+      AssetSource src = AssetSource("audio/bell.mp3");
+      await audioPlayer.play(src);
+    }
 
     setState(() {
       bellRinging = true;
@@ -379,12 +382,13 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       audioTheriyuma();
       return;
     }
+
     if (msg.cmd == BuzzCmd.endRound) {
       setState(() {
         topBuzzers = null;
       });
       setBuzzState(BuzzState.clientWaitingForCmd);
-      return null;
+      return;
     }
 
     if (msg.cmd == BuzzCmd.countdown) {
@@ -392,6 +396,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       setState(() {
         secondsRemaining = sec;
       });
+      return;
+    }
+
+    if (msg.cmd == BuzzCmd.score) {
+      int score = msg.data["score"] ?? 0;
+      setState(() {
+        myScore = score;
+      });
+      return;
     }
   }
 

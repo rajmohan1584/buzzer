@@ -8,8 +8,8 @@ class ServerHelper {
   static Widget buildClient(
       BuzzClient client,
       int index,
-      Function(BuzzClient)? sendPingToClient,
-      Function(BuzzClient client, int score)? onClientScoreChange) {
+      Function(BuzzClient) sendPingToClient,
+      Function(BuzzClient client, int score) onClientScoreChange) {
     /*
     Color color = COLORS.background["gray"]!;
     if (client.iAmReady) {
@@ -26,7 +26,7 @@ class ServerHelper {
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Expanded(
           flex: 1,
-          child: WIDGETS.bellIconButton(() => sendPingToClient!(client),
+          child: WIDGETS.bellIconButton(() => sendPingToClient(client),
               hShake: client.bellRinging, vShake: client.bellFlashing)),
       Expanded(flex: 5, child: name),
       //Expanded(child: WIDGETS.nameValue('port', '${client.socket.remotePort}')),
@@ -37,7 +37,7 @@ class ServerHelper {
               client.score,
               CONST.clientMinScore,
               CONST.clientMaxScore,
-              (int v) => {onClientScoreChange!(client, v)})),
+              (int v) => {onClientScoreChange(client, v)})),
     ]);
 
     final Color color = client.alive ? Colors.greenAccent : Colors.redAccent;

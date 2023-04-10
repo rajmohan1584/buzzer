@@ -19,6 +19,8 @@ import '../model/message.dart';
 import '../model/command.dart';
 import '../net/single_multicast.dart';
 
+const bool bellAudioEnabled = false;
+
 class BuzzServerScreen extends StatefulWidget {
   const BuzzServerScreen({super.key});
 
@@ -166,7 +168,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           itemCount: clients.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 1.5,
+            childAspectRatio: 1.25,
           ),
           itemBuilder: (context, int index) {
             BuzzClient client = clients.clients[index];
@@ -177,7 +179,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  ClientDetail(client, index)))
+                                  ClientDetail(client, index,
+                                  sendPingToClient, onClientScoreChange)))
                     },
                 child: buildGridClient(client, index));
           });
@@ -193,7 +196,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ClientDetail(client, index)))
+                          builder: (context) => ClientDetail(client, index,
+                              sendPingToClient, onClientScoreChange)))
                 },
             child: buildSlidableClient(client, index));
       },
@@ -233,26 +237,29 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     final bell = WIDGETS.bellIconButton(() => sendPingToClient(client),
         hShake: client.bellRinging, vShake: client.bellFlashing);
     final score =
-        Text("${client.score}", style: const TextStyle(fontSize: 20.0));
+        Text("${client.score}", style: const TextStyle(fontSize: 30.0));
+    final buzzedStatus = WIDGETS.buzzedStatus(client.buzzedState, index);
 
     final row = Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [bell, score]));
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [bell, buzzedStatus, score]));
 
     final column = Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [name, row]);
+
     final Color color = client.alive ? Colors.greenAccent : Colors.redAccent;
+
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
+        margin: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 5.0),
         elevation: 10.0,
         shape: Border(left: BorderSide(color: color, width: 5)),
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(.0),
           child: column,
         ));
   }
@@ -273,9 +280,11 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   ///////////////////////////////////////////////////////
   ///
   Future ringBell(BuzzClient c) async {
-    audioPlayer.release();
-    AssetSource src = AssetSource("audio/bell.mp3");
-    await audioPlayer.play(src);
+    if (bellAudioEnabled) {
+      audioPlayer.release();
+      AssetSource src = AssetSource("audio/bell.mp3");
+      await audioPlayer.play(src);
+    }
 
     setState(() {
       c.bellRinging = true;
@@ -385,7 +394,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   void onStopRound() {
     setState(() {
+      // Stop the round
       roundStarted = false;
+      // Reset the DoubleButton
+      dbController.reset();
     });
     stopRoundTimer();
     sendCountdownToAllClients();
@@ -454,12 +466,22 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         ]);
 
     final settingsSegue = GestureDetector(
-        onTap: () => {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ServerSettingsScreen(settings)))
-            },
+        onTap: () async {
+          final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ServerSettingsScreen(settings)));
+
+          // When a BuildContext is used from a StatefulWidget, the mounted property
+          // must be checked after an asynchronous gap.
+          if (!mounted) return;
+
+          if (result != null) {
+            setState(() {
+              settings = result;
+            });
+          }
+        },
         child: const Icon(CupertinoIcons.right_chevron));
 
     Widget actionsRow = Row(
@@ -697,7 +719,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
 
     final counts = clients.counts;
-    final total = counts[0], yes = counts[3], no = counts[3];
+    final total = counts[0], yes = counts[3], no = counts[4];
 
     if (total == yes + no) {
       // Round Done.

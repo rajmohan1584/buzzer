@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 //////////////////
 ///
@@ -13,6 +12,12 @@ class DoubleButtonController extends ChangeNotifier {
   bool get sw2Checked => _sw2Checked;
   bool get sw1Enabled => _sw1Enabled;
   bool get sw2Enabled => _sw2Enabled;
+
+  void reset() {
+    _sw1Checked = false;
+    _sw2Checked = false;
+    _sw2Enabled = false;
+  }
 
   set sw1Checked(bool value) {
     _sw1Checked = value;

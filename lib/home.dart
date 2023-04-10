@@ -13,7 +13,7 @@ import 'model/message.dart';
 const testMode = true;
 
 class Home extends StatefulWidget {
-  Home({Key? key}) : super(key: key);
+  const Home({Key? key}) : super(key: key);
 
   @override
   State<Home> createState() => _HomeState();

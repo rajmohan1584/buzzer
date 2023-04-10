@@ -1,12 +1,12 @@
-import 'package:buzzer/model/client.dart';
 import 'package:buzzer/model/server_settings.dart';
 import 'package:buzzer/util/widgets.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class ServerSettingsScreen extends StatefulWidget {
   final ServerSettings settings;
 
-  ServerSettingsScreen(this.settings, {Key? key}) : super(key: key);
+  const ServerSettingsScreen(this.settings, {Key? key}) : super(key: key);
 
   @override
   State<ServerSettingsScreen> createState() => _ServerSettingsScreenState();
@@ -34,7 +34,55 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
     );
   }
 
+  onViewModeListChanged(bool on) {
+    final viewMode = on ? "list" : "grid";
+    setState(() {
+      settings.viewMode = viewMode;
+    });
+  }
+
+  onViewModeGridChanged(bool on) {
+    final viewMode = on ? "grid" : "list";
+    setState(() {
+      settings.viewMode = viewMode;
+    });
+  }
+
+  onSaveSettings() {
+    Navigator.pop(context, settings);
+  }
+
+  onCancel() {
+    Navigator.pop(context, null);
+  }
+
   Widget buildBody() {
+    Widget viewMode = Column(children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Icon(CupertinoIcons.rectangle_grid_1x2, size: 50),
+          const Text("Set Display Mode to List"),
+          CupertinoSwitch(
+              value: settings.viewMode == "list",
+              onChanged: onViewModeListChanged),
+        ],
+      ),
+      const SizedBox(height: 15),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Icon(CupertinoIcons.rectangle_grid_3x2, size: 50),
+          const Text("Set Display Mode to Grid"),
+          CupertinoSwitch(
+              value: settings.viewMode == "grid",
+              onChanged: onViewModeGridChanged),
+        ],
+      )
+    ]);
+
     Widget timout = WIDGETS.switchRowWithInput(
         "Auto Stop Timeout Seconds",
         settings.enableTimeout,
@@ -49,6 +97,13 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
         settings.buzzedCount,
         onBuzzedCountChange);
 
+    Widget actions =
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      WIDGETS.button("Cancel", onCancel),
+      const SizedBox(width: 100),
+      WIDGETS.button("Save", onSaveSettings)
+    ]);
+
     final child = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -56,10 +111,18 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
           const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
           const SizedBox(height: 5),
+          viewMode,
+          const SizedBox(height: 5),
+          const Divider(height: 2, thickness: 2),
+          const SizedBox(height: 50),
+          const Divider(height: 2, thickness: 2),
+          const SizedBox(height: 5),
           timout,
           buzzed,
           const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
+          const SizedBox(height: 50),
+          actions
         ]);
 
     return child;

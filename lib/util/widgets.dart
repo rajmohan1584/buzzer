@@ -27,8 +27,8 @@ class WIDGETS {
     return Text(name, style: const TextStyle(fontSize: 14.0));
   }
 
-  static Widget valueText(String value) {
-    return Text(value, style: const TextStyle(fontSize: 16.0));
+  static Widget valueText(String value, {fontSize = 14.0}) {
+    return Text(value, style: TextStyle(fontSize: fontSize));
   }
 
   static Widget keyValueText(String value) {
@@ -36,12 +36,12 @@ class WIDGETS {
         style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.w700));
   }
 
-  static Widget nameValue(String name, String value) {
+  static Widget nameValue(String name, String value, {fontSize = 20.0}) {
     return Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          valueText(value),
+          valueText(value, fontSize: fontSize),
           const SizedBox(height: 5),
           nameText(name)
         ]);
