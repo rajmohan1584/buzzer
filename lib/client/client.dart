@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:buzzer/widets/top_buzzers.dart';
+import 'package:buzzer/widgets/top_buzzers.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/log.dart';
@@ -30,7 +30,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   List<BuzzMsg> serverMessages = [];
   final audioPlayer = AudioPlayer();
   String error = "";
-  double secondsRemaining = 0;
+  int secondsRemaining = 0;
   bool bellRinging = false;
   bool bellFlashing = false;
   Timer? heartbeatCheckTimer;
@@ -103,15 +103,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildPlayArea() {
-    /*
+
     if (error.isNotEmpty) {
       return Center(child: Text(error));
     }
     switch (state) {
       case BuzzState.clientWaitingForServer:
         return clientWaitingForServer();
-      case BuzzState.clientWaitingToLogin:
-        return buildWaitingToLogin();
+//      case BuzzState.clientWaitingToLogin:
+//        return buildWaitingToLogin();
       case BuzzState.clientWaitingForCmd:
         return buildWaitingForCmd();
       case BuzzState.clientReady:
@@ -119,8 +119,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       default:
         return Text('Bug State: $state');
     }
-    */
-    return const Text('TODO');
   }
 
   ///////////////////////////////////////////
@@ -201,10 +199,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   /*
-  Widget clientWaitingForServer() {
-    return const Center(child: Text("Waiting for Server"));
-  }
-
   void onLogin() async {
     if (!connected) {
       connectToServerAndListen();
@@ -262,19 +256,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     //return const Center(child: Text("Waiting for Login Response"));
   }
 
-  Widget buildWaitingForCmd() {
-    if (topBuzzers != null) {
-      final int count = topBuzzers!["count"] ?? 0;
-      if (count == 0) {
-        return const Center(child: Text("No one buzzed this time"));
-      }
-
-      final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
-      return TopBuzzers(buzzers);
-    }
-    return const Center(child: Text("Connected. Waiting for Server Cmd"));
-  }
-
   Widget buildAreYouReady() {
     Widget actions = Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -301,6 +282,11 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
         ]));
   }
 
+ */
+  Widget clientWaitingForServer() {
+    return const Center(child: Text("Ready To Play"));
+  }
+
   Widget buildReady() {
     return Center(
         child: Column(
@@ -319,7 +305,19 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
           WIDGETS.yesBuzzer(onBuzzedYes),
         ]));
   }
-  */
+
+  Widget buildWaitingForCmd() {
+    if (topBuzzers != null) {
+      final int count = topBuzzers!["count"] ?? 0;
+      if (count == 0) {
+        return const Center(child: Text("No one buzzed this time"));
+      }
+
+      final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
+      return TopBuzzers(buzzers);
+    }
+    return const Center(child: Text("Connected. Waiting for Server Cmd"));
+  }
 
   /*
   void onBuzzed() {
@@ -374,6 +372,26 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     if (msg.cmd == BuzzCmd.rejoinClientResponse) {
       return processRejoinClient(msg);
+    }
+
+    if (msg.cmd == BuzzCmd.startRound) {
+      setBuzzState(BuzzState.clientReady);
+      audioTheriyuma();
+      return;
+    }
+    if (msg.cmd == BuzzCmd.endRound) {
+      setState(() {
+        topBuzzers = null;
+      });
+      setBuzzState(BuzzState.clientWaitingForCmd);
+      return null;
+    }
+
+    if (msg.cmd == BuzzCmd.countdown) {
+      int sec = msg.data["sec"] ?? 0;
+      setState(() {
+        secondsRemaining = sec;
+      });
     }
   }
 

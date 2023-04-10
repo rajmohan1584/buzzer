@@ -20,8 +20,8 @@ class BuzzCmd {
   static get areYouReady => "AUR";
   static get iAmReady => "IAR";
 
-  static get showBuzz => "SHOW-BUZZ";
-  static get hideBuzz => "HIDE-BUZZ";
+  static get startRound => "START-ROUND";
+  static get endRound => "END-ROUND";
 
   //static get buzz => "BUZZ";
   static get buzzNo => "BUZZ-NO";

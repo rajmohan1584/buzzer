@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_shake_animated/flutter_shake_animated.dart';
 import 'package:flutter_spinbox/flutter_spinbox.dart';
 
-import '../widets/int_spinner.dart';
+import '../widgets/int_spinner.dart';
 
 class WIDGETS {
   static Image assetImage(String file,

@@ -1,7 +1,7 @@
 import 'package:buzzer/model/client.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/widgets.dart';
-import 'package:buzzer/widets/int_spinner.dart';
+import 'package:buzzer/widgets/int_spinner.dart';
 import 'package:flutter/material.dart';
 
 class ServerHelper {

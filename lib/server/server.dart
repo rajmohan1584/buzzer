@@ -8,6 +8,7 @@ import 'package:buzzer/server/helper.dart';
 import 'package:buzzer/server/server_settings.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/util/widgets.dart';
+import 'package:buzzer/widgets/double_switch.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/log.dart';
@@ -39,10 +40,12 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   final audioPlayer = AudioPlayer();
   bool serverAlive = false;
   ServerSettings settings = ServerSettings();
+  DoubleButtonController dbController = DoubleButtonController();
 
   @override
   void initState() {
     Log.log('Server InitState');
+    dbController.addListener(handleHandleDoubleButtonChange);
     startMulticastTimer();
 
     StaticSingleMultiCast.controller2.stream.listen((BuzzMsg msg) {
@@ -71,6 +74,15 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    dbController.removeListener(handleHandleDoubleButtonChange);
+    stopRoundTimer();
+    stopMulticastTimer();
+    audioPlayer.dispose();
+    super.dispose();
+  }
+
   ///////////////////////////////////////////////////////////////////
   ///
   Future processNewClient(
@@ -95,14 +107,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     Log.log(ncResponse.toSocketMsg());
     StaticSingleMultiCast.sendBuzzMsg(ncResponse);
     GameCache.dump();
-  }
-
-  @override
-  void dispose() {
-    stopRoundTimer();
-    stopMulticastTimer();
-    audioPlayer.dispose();
-    super.dispose();
   }
 
   ///////////////////////////////////////////
@@ -162,7 +166,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           itemCount: clients.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 1.75,
+            childAspectRatio: 1.5,
           ),
           itemBuilder: (context, int index) {
             BuzzClient client = clients.clients[index];
@@ -389,7 +393,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     sendTopBuzzersToAllClients();
   }
 
-  Widget buildStartStop() {
+  Widget buildStartStop0() {
     int groupValue = roundStarted ? 0 : 1;
     return Container(
       alignment: Alignment.center,
@@ -412,6 +416,22 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     );
   }
 
+  Widget buildStartStop() {
+    return DoubleButton(dbController);
+  }
+
+  handleHandleDoubleButtonChange() {
+    if (dbController.sw2Checked) {
+      Log.log('Start Rount');
+      onStartRound();
+    } else {
+      if (roundStarted) {
+        Log.log('Stop Round');
+        onStopRound();
+      }
+    }
+  }
+
   Widget handleServerWaitingForClients() {
     final counts = clients.counts;
     final total = counts[0],
@@ -430,7 +450,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
           WIDGETS.nameValue("டெட்", "$dead"),
           WIDGETS.nameValue("தெரியும்", "$yes/${settings.buzzedCount}"),
           WIDGETS.nameValue("தெரியாது", "$no"),
-          WIDGETS.nameValue("Nota", "$pending"),
+          WIDGETS.nameValue("நோட்டா", "$pending"),
         ]);
 
     final settingsSegue = GestureDetector(
@@ -563,13 +583,13 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       });
     }
     final showBuzz =
-        BuzzMsg(BuzzCmd.server, BuzzCmd.showBuzz, {}, targetId: 'ALL');
+        BuzzMsg(BuzzCmd.server, BuzzCmd.startRound, {}, targetId: 'ALL');
     StaticSingleMultiCast.sendBuzzMsg(showBuzz);
   }
 
   void hideBuzzerToAllClients() {
     final hideBuzz =
-        BuzzMsg(BuzzCmd.server, BuzzCmd.hideBuzz, {}, targetId: 'ALL');
+        BuzzMsg(BuzzCmd.server, BuzzCmd.endRound, {}, targetId: 'ALL');
     StaticSingleMultiCast.sendBuzzMsg(hideBuzz);
   }
 
@@ -620,25 +640,33 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   Future onClientMessage(BuzzMsg msg, BuzzClient client) async {
     if (msg.cmd == BuzzCmd.hbr) {
       await processHeartbeatResponse(msg);
+      return;
     }
 
     if (msg.cmd == BuzzCmd.ping) {
       processPing(client);
+      return;
     }
 
     if (msg.cmd == BuzzCmd.pong) {
       // client is responding to a server ping.
       flashBell(client);
+      return;
     }
 
     if (msg.cmd == BuzzCmd.rejoinClientRequest) {
       await processRejoinClient(msg);
+      return;
     }
 
+    if (msg.cmd == BuzzCmd.buzzYes || msg.cmd == BuzzCmd.buzzNo) {
+      processClientBuzz(client, msg);
+      return;
+    }
     Log.log('onClientMessage - complete');
   }
 
-  processPing(client) {
+  processPing(BuzzClient client) {
     // Client is pinging server.
     ringBell(client);
     final pong = BuzzMsg(BuzzCmd.server, BuzzCmd.pong, {}, targetId: client.id);
@@ -659,5 +687,25 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     final String name = msg.data["name"];
     // TODO GameCache.addRejoinClient(id, name);
     GameCache.dump();
+  }
+
+  processClientBuzz(BuzzClient client, BuzzMsg msg) {
+    setState(() {
+      client.buzzedState = msg.cmd;
+      client.updated = DateTime.now();
+      clients.sortByBuzzedUpdated();
+    });
+
+    final counts = clients.counts;
+    final total = counts[0], yes = counts[3], no = counts[3];
+
+    if (total == yes + no) {
+      // Round Done.
+      onStopRound();
+    }
+    if (settings.enableBuzzed && yes == settings.buzzedCount) {
+      // Round Done
+      onStopRound();
+    }
   }
 }
