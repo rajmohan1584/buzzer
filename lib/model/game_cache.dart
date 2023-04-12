@@ -201,3 +201,47 @@ class GameCache {
     return true;
   }
 }
+
+/*
+//////////////////////////////////////////////////////////////////////
+  // Register Client
+  // Client should pass its ID
+  // Name is optional (On a rejoin)
+  // Will return name and score and ??
+  //
+  static Future<Map<String, dynamic>> registerParticipant(String id,
+      {String name = ""}) async {
+    //
+    // Check if the ID exists.
+    // If so - send to reRegister
+    //
+    if (getClient(id) != null) {
+      return _reRegisterParticipant(id, name);
+    }
+
+    // If not create
+    // A new name gets generated for each new client.
+    // Also if a disconnected client comes in as a new one,
+    //    the score will be set to zero and the old connection will be stale.
+    //    And the stale connection should be purged later - // TODO
+    //
+
+    // Create a new name
+    int count = ++_participantId; //await getNextClientCount();
+    String newName = name.isNotEmpty ? name : 'Participant_$count';
+
+    // Add the id to the array of client ids.
+    List<String> clients = getClients();
+    clients.add(id);
+    setClients(clients);
+
+    // Also create a new key with id and the {}
+    //assert(await getClient(id) == null);
+    Map<String, dynamic> client = {};
+    client[_name] = newName;
+    client[_score] = 0;
+    await setClient(id, client);
+
+    return newName;
+  }
+  */

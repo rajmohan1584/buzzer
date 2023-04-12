@@ -198,6 +198,14 @@ class WIDGETS {
     );
   }
 
+  static Widget popupWindowIconButton(Function() onPressed) {
+    return IconButton(
+      icon: const Icon(CupertinoIcons.arrowshape_turn_up_right),
+      iconSize: 25,
+      onPressed: onPressed,
+    );
+  }
+
   static Widget bellIconButton(Function() onPressed,
       {bool hShake = false, bool vShake = false}) {
     Widget w = IconButton(
