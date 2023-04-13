@@ -40,7 +40,7 @@ class StaticServertMulticastListener {
         if (datagram != null) {
           final str = String.fromCharCodes(datagram.data);
           Log.log('StaticServertMulticastListener Received: $str');
-          final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+          final BuzzMsg? msg = BuzzMsg.fromString(str);
           if (msg != null && callback != null) {
             //await callback!(msg);
           }

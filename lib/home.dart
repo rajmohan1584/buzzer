@@ -54,7 +54,7 @@ class _HomeState extends State<Home> {
     });
 
     _streamSubscription =
-        StaticSingleMultiCast.controller1.stream.listen(onServerMessage);
+        StaticSingleMultiCast.initialQueue.stream.listen(onServerMessage);
     /*
     StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);

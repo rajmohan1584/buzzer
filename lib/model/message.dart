@@ -50,12 +50,12 @@ class BuzzMsg {
     return msg;
   }
 
-  static BuzzMsg? fromMulticastMessage(String msg) {
+  static BuzzMsg? fromString(String msg) {
     if (msg.isEmpty) return null;
     final List<String?> a = msg.split('~');
     if (a.length < 5) {
       //assert(false);
-      Log.log('***** ERROR ***** - fromMulticastMessage - TODO DEbug');
+      Log.log('***** ERROR ***** - fromString - TODO DEbug');
       return null;
     }
 

@@ -11,17 +11,19 @@ import '../model/command.dart';
 class StaticSingleMultiCast {
   static final address = InternetAddress(CONST.multicastIP);
   static final port = CONST.multicastPort;
-  static final StreamController<BuzzMsg> controller1 =
+  static final StreamController<BuzzMsg> initialQueue =
       StreamController<BuzzMsg>();
-  static final StreamController<BuzzMsg> controller2 =
+  static final StreamController<BuzzMsg> mainQueue =
       StreamController<BuzzMsg>();
+  static final StreamController<String> androidOutQueue =
+      StreamController<String>();
 
   static Future initListener() async {
     final socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
-      //reusePort: true,
+      reusePort: true,
       //multicastLoopback: true,
     );
 
@@ -31,16 +33,17 @@ class StaticSingleMultiCast {
       if (event == RawSocketEvent.read) {
         var datagram = socket.receive();
         if (datagram != null) {
+          final String str = String.fromCharCodes(datagram.data);
+          androidOutQueue.add(str);
           // Filter our own messages out
           final sourceAddress = datagram.address;
           if (sourceAddress != InternetAddress.anyIPv4 &&
               sourceAddress != InternetAddress.loopbackIPv4) {
-            final str = String.fromCharCodes(datagram.data);
             Log.log('StaticSingleMultiCast Received: $str');
-            final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+            final BuzzMsg? msg = BuzzMsg.fromString(str);
             if (msg != null) {
-              controller1.add(msg);
-              controller2.add(msg);
+              initialQueue.add(msg);
+              mainQueue.add(msg);
             } else {
               Log.log("WTF");
             }

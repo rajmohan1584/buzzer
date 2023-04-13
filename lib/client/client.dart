@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:buzzer/net/server_direct.dart';
 import 'package:buzzer/widgets/top_buzzers.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
@@ -46,7 +47,10 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     userController.text = "Raj";
     startHeartbeatCheckTimer();
 
-    StaticSingleMultiCast.controller2.stream.listen((BuzzMsg msg) {
+    StaticSingleMultiCast.mainQueue.stream.listen((BuzzMsg msg) {
+      onServerMessage(msg);
+    });
+    ServerDirect.androidInQueue.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);
     });
 

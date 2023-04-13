@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/model/server_settings.dart';
+import 'package:buzzer/net/multiplexor.dart';
 import 'package:buzzer/server/client_detail.dart';
 import 'package:buzzer/server/helper.dart';
 import 'package:buzzer/server/server_settings.dart';
@@ -51,7 +52,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     dbController.addListener(handleHandleDoubleButtonChange);
     startMulticastTimer();
 
-    StaticSingleMultiCast.controller2.stream.listen((BuzzMsg msg) {
+    StaticSingleMultiCast.mainQueue.stream.listen((BuzzMsg msg) {
       // Assert that there is no cross talk.
       if (msg.source == BuzzCmd.server) {
         // Our own message
@@ -79,6 +80,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       processNewClient(msg);
     });
 
+    Multiplexor.createServerAndListen();
     super.initState();
   }
 
@@ -273,9 +275,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
             child: Container(
                 decoration: BoxDecoration(
                     border: Border(left: BorderSide(color: color, width: 12))),
-        child: Padding(
-          padding: const EdgeInsets.all(.0),
-          child: column,
+                child: Padding(
+                  padding: const EdgeInsets.all(.0),
+                  child: column,
                 ))));
   }
 

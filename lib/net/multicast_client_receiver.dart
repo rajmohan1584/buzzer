@@ -43,7 +43,7 @@ class StaticClientMulticastListener {
         if (datagram != null) {
           final str = String.fromCharCodes(datagram.data);
           Log.log('ClientMulticastListener Received: $str');
-          final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+          final BuzzMsg? msg = BuzzMsg.fromString(str);
           if (msg != null && callback != null) {
             await callback!(msg);
           }
@@ -85,7 +85,7 @@ class StaticClientMulticastListenerold {
         var str = String.fromCharCodes(d.data);
 
         Log.log('Received multicastNew: $str');
-        final BuzzMsg? msg = BuzzMsg.fromMulticastMessage(str);
+        final BuzzMsg? msg = BuzzMsg.fromString(str);
         if (msg != null && callback != null) {
           //await callback!(msg);
         }
