@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/server/server.dart';
@@ -30,6 +31,7 @@ class _HomeState extends State<Home> {
   Timer? timer;
   int timerCounter = 0;
   StreamSubscription<BuzzMsg>? _streamSubscription;
+  bool isAndroid = Platform.isAndroid;
 
   @override
   void initState() {
@@ -88,7 +90,7 @@ class _HomeState extends State<Home> {
     timerCounter++;
     if (timerCounter >= 1) {
       // Check if we found a QuizMaster.
-      if (anotherServerIsRunning) {
+      if (anotherServerIsRunning || isAndroid) {
         Log.log('Another Server is running, GoToClient in a sec');
         _streamSubscription?.cancel();
         _streamSubscription = null;
@@ -99,10 +101,10 @@ class _HomeState extends State<Home> {
       }
     }
 
-    if (!anotherServerIsRunning && timerCounter > 3) {
-        // This user may be the server. Let him login
-        setState(() {
-          allowServerLogin = true;
+    if (!isAndroid && !anotherServerIsRunning && timerCounter > 3) {
+      // This user may be the server. Let him login
+      setState(() {
+        allowServerLogin = true;
       });
     }
   }

@@ -48,8 +48,7 @@ dependencies:
   nanoid: ^1.0.0
   tuple: ^2.0.1
   flutter_slidable: ^2.0.0
-  socket_io_client: 1.0.1
-  socket_io: 1.0.1
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   # The "flutter_lints" package below contains a set of recommended lints to

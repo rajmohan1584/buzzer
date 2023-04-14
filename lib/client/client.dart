@@ -44,17 +44,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   @override
   void initState() {
     Log.log('Client InitState');
+    ServerDirectReceiver.start();
+
     userController.text = "Raj";
     startHeartbeatCheckTimer();
 
     StaticSingleMultiCast.mainQueue.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);
     });
-    ServerDirect.androidInQueue.stream.listen((BuzzMsg msg) {
+    ServerDirectReceiver.androidInQueue.stream.listen((BuzzMsg msg) {
       onServerMessage(msg);
     });
-
-    registerUs();
 
     super.initState();
   }
@@ -84,8 +84,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Widget buildBody() {
     final List<Widget> children = buildPlayArea();
 
-    return Column(
-        children: [
+    return Column(children: [
       buildMyself(),
       const Divider(height: 2),
       const SizedBox(height: 30),
@@ -162,6 +161,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   onHeartbeatCheckTimer(_) async {
+    registerUs();
+
     Duration d = DateTime.now().difference(lastHeartbeatTime);
     final bool newAlive = d.inSeconds <= 3;
     setState(() {
@@ -331,8 +332,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       } else {
         children.add(Center(
             child: Text("Top $count Buzzers",
-                style:
-                    const TextStyle(fontSize: 30, color: Colors.green))));
+                style: const TextStyle(fontSize: 30, color: Colors.green))));
         children.add(const Divider(
           height: 3,
         ));
@@ -460,6 +460,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     Log.log('processNewClient ${msg.toSocketMsg()}');
     setState(() {
       userName = msg.data["name"] ?? "Unknown";
+      Log.log("Setting userNAme to $userName");
     });
   }
 

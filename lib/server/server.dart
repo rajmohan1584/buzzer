@@ -45,6 +45,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   bool serverAlive = false;
   ServerSettings settings = ServerSettings();
   DoubleButtonController dbController = DoubleButtonController();
+  final int heartBeatSeconds = 1;
 
   @override
   void initState() {
@@ -80,7 +81,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       processNewClient(msg);
     });
 
-    Multiplexor.createServerAndListen();
+    MultiplexorSender.start();
     super.initState();
   }
 
@@ -358,7 +359,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   ///
   startMulticastTimer() {
     stopMulticastTimer();
-    const dur = Duration(seconds: 1);
+    final dur = Duration(seconds: heartBeatSeconds);
     multicastTimer = Timer.periodic(dur, onMulticastTimer);
   }
 
