@@ -11,7 +11,7 @@ import 'client/client.dart';
 import 'model/command.dart';
 import 'model/message.dart';
 
-const testMode = true;
+const testMode = false;
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -23,26 +23,34 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final FocusNode focusNode = FocusNode();
   String mode = "idk"; // client, server
-  bool allowServerLogin = false;
+  bool isAndroid = Platform.isAndroid;
+
   final maxlen = 6;
   String passkey = "";
   final secretKey = "135246";
-  bool anotherServerIsRunning = false;
-  Timer? timer;
-  int timerCounter = 0;
+
+  bool anotherQuizMasterIsRunning = false;
+  Timer? quizMasterCheckTimer;
+  DateTime radarStartTime = DateTime.now();
   StreamSubscription<BuzzMsg>? _streamSubscription;
-  bool isAndroid = Platform.isAndroid;
+  bool allowServerLogin = false;
+  bool allowClientLogin = false;
+
+  String userName = ""; // TODO - Get it from cache.
+  int userAvatar = -1; // Get it from cache.
 
   @override
   void initState() {
-    startTimer();
+    startQuizMasterCheckTimer();
     resetAll();
+    _streamSubscription =
+        StaticSingleMultiCast.initialQueue.stream.listen(onServerMessage);
     super.initState();
   }
 
   @override
   dispose() {
-    stoptTimer();
+    stopQuizMasterCheckTimer();
     super.dispose();
   }
 
@@ -50,18 +58,10 @@ class _HomeState extends State<Home> {
     setState(() {
       passkey = "";
       mode = "idk";
-      anotherServerIsRunning = false;
       allowServerLogin = false;
-      timerCounter = 0;
+      allowClientLogin = false;
+      anotherQuizMasterIsRunning = false;
     });
-
-    _streamSubscription =
-        StaticSingleMultiCast.initialQueue.stream.listen(onServerMessage);
-    /*
-    StaticSingleMultiCast.controller.stream.listen((BuzzMsg msg) {
-      onServerMessage(msg);
-    });
-    */
   }
 
   /////////////////////////////////////////////////
@@ -72,59 +72,71 @@ class _HomeState extends State<Home> {
     assert(msg.cmd == BuzzCmd.hbq);
 
     setState(() {
-      timerCounter++;
-      anotherServerIsRunning = true;
+      anotherQuizMasterIsRunning = true;
     });
   }
 
-  startTimer() {
+  startQuizMasterCheckTimer() {
     Log.log('Home - StartTimer');
     //stoptTimer();
     //const dur = Duration(seconds: 2);
     const dur = Duration(milliseconds: 500);
-    timer = Timer.periodic(dur, onTimer);
+    quizMasterCheckTimer = Timer.periodic(dur, onQuizMasterCheckTimer);
   }
 
-  onTimer(_) async {
-    // For 10 seconds keep radar spinning
-    timerCounter++;
-    if (timerCounter >= 1) {
-      // Check if we found a QuizMaster.
-      if (anotherServerIsRunning || isAndroid) {
-        Log.log('Another Server is running, GoToClient in a sec');
-        _streamSubscription?.cancel();
-        _streamSubscription = null;
-        stoptTimer();
-        Future.delayed(const Duration(milliseconds: 1000), () {
-          gotoClient();
+  final radarSpinSeconds = 3;
+  Future getClientInfo() {
+    return showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: Text('Your Have the Right to Enter Your Name'),
+                content: TextField(),
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text("Let's Play"))
+                ]));
+  }
+
+  onQuizMasterCheckTimer(_) async {
+    // For a few seconds keep radar spinning
+    Duration d = DateTime.now().difference(radarStartTime);
+
+    if (d.inSeconds > radarSpinSeconds) {
+      if (anotherQuizMasterIsRunning || isAndroid) {
+        // Client Mode
+        // Allow user to enter/change name and pick an avatar
+        allowClientLogin = true;
+        /*
+        getClientInfo().then((value) {
+          // Check if we found a QuizMaster.
+          if (anotherQuizMasterIsRunning || isAndroid) {
+            Log.log('Another Server is running, GoToClient in a sec');
+
+            _streamSubscription?.cancel();
+            _streamSubscription = null;
+            stopQuizMasterCheckTimer();
+            Future.delayed(const Duration(milliseconds: 1000), () {
+              gotoClient();
+            });
+          }
+        });
+        */
+      } else {
+        // This user may be the server. Let him login
+        setState(() {
+          allowServerLogin = true;
         });
       }
     }
-
-    if (!isAndroid && !anotherServerIsRunning && timerCounter > 3) {
-      // This user may be the server. Let him login
-      setState(() {
-        allowServerLogin = true;
-      });
-    }
   }
 
-  stoptTimer() {
+  stopQuizMasterCheckTimer() {
     Log.log('Home - StopTimer');
-    timer?.cancel();
+    quizMasterCheckTimer?.cancel();
   }
-
-  /*
-  void onFoundQuizMaster(String ip) {
-    Log.log("onFoundQuizMaster IP: $ip");
-    setState(() {
-      mode = "client";
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        gotoClient();
-      });
-    });
-  }
-  */
 
   void gotoClient() {
     // Leave the multicast listner on.
@@ -162,7 +174,7 @@ class _HomeState extends State<Home> {
     });
   }
 
-  onLogin() {
+  onServerLogin() {
     if (testMode) {
       Log.log('Skip Login. GoToServer in a sec');
       _streamSubscription?.cancel();
@@ -184,6 +196,7 @@ class _HomeState extends State<Home> {
     }
   }
 
+  onClientLogin() {}
   Widget passwordInput() {
     const green = Color(0xff82fb4c);
     final boxes = <Widget>[];
@@ -213,8 +226,22 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget messageOrInput(w) {
-    if (mode == "server") {
+  Widget messageOrInputs(w) {
+    if (allowServerLogin) {
+      return SizedBox(
+        width: w / 2,
+        height: 50,
+        child: TextField(
+            focusNode: focusNode,
+            autofocus: true,
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            keyboardType: TextInputType.number,
+            onChanged: onTextChanged,
+            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+      );
+    } else if (allowClientLogin) {
       return SizedBox(
         width: w / 2,
         height: 50,
@@ -229,14 +256,7 @@ class _HomeState extends State<Home> {
             style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
       );
     } else {
-      return SizedBox(
-          width: w,
-          height: 50,
-          child:
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: const [
-            Text("Searching For Quiz Master...",
-                style: TextStyle(fontSize: 25, color: Color(0xff82fb4c)))
-          ]));
+      return SizedBox(height: 1);
     }
   }
 
@@ -251,22 +271,149 @@ class _HomeState extends State<Home> {
     Widget? fab;
     if (allowServerLogin && mode == "idk") {
       fab = FloatingActionButton.extended(
-          onPressed: onLogin, label: const Text("Login as Quiz Master"));
+          onPressed: onServerLogin, label: const Text("Login as Quiz Master"));
+    } else if (allowClientLogin) {
+      fab = FloatingActionButton.extended(
+          onPressed: onClientLogin, label: const Text("Let's Play"));
     }
+
+    final children = <Widget>[
+      ...buildMessages(),
+      ...buildInputs(w),
+      buildSpinner(w)
+    ];
 
     return Scaffold(
         appBar: AppBar(
-            leading: WIDGETS.heartbeatIcon(anotherServerIsRunning),
+            leading: WIDGETS.heartbeatIcon(anotherQuizMasterIsRunning),
+            title: const Text("Buzzer - Searching...")),
+        backgroundColor: Colors.black,
+        floatingActionButton: fab,
+        body: Column(children: children));
+  }
+
+  List<Widget> buildMessages() {
+    final List<Widget> children = [];
+
+    if (allowClientLogin) {
+      children.add(Container(
+          alignment: Alignment.topLeft,
+          child:
+              WIDGETS.assetImage("server-found.png", width: 350, height: 100)));
+      children.add(Container(
+          alignment: Alignment.topLeft,
+          child: WIDGETS.assetImage("identify-yourself.png",
+              width: 450, height: 150)));
+    } else if (allowServerLogin) {
+      children.add(Container(
+          alignment: Alignment.topLeft,
+          child: WIDGETS.assetImage("quizmaster-pin.png",
+              width: 450, height: 150)));
+    } else {
+      children.add(Container(
+          alignment: Alignment.topLeft,
+          child: WIDGETS.assetImage("searching.png", width: 450, height: 150)));
+    }
+    children.add(
+      const Divider(indent: 50, endIndent: 50, color: Color(0xff82fb4c)),
+    );
+    return children;
+  }
+
+  List<Widget> buildInputs(w) {
+    final List<Widget> children = [];
+
+    final borderRadius = BorderRadius.circular(15);
+    final List<Widget> avatars = [];
+    for (var i = 1; i <= 6; i++) {
+      final color = userAvatar == i ? const Color(0xff82fb4c) : Colors.black;
+      avatars.add(GestureDetector(
+          onTap: () => setState(() {
+                userAvatar = userAvatar == i ? -1 : i;
+              }),
+          child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration:
+                  BoxDecoration(color: color, borderRadius: borderRadius),
+              child: ClipRect(
+                child: SizedBox.fromSize(
+                    size: const Size.fromRadius(50),
+                    child:
+                        Image.asset('assets/images/$i.png', fit: BoxFit.cover)),
+              ))));
+    }
+
+    if (allowServerLogin) {
+      children.add(SizedBox(
+        width: w / 2,
+        height: 50,
+        child: TextField(
+            focusNode: focusNode,
+            autofocus: true,
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            keyboardType: TextInputType.number,
+            onChanged: onTextChanged,
+            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+      ));
+    } else if (allowClientLogin) {
+      children.add(SizedBox(
+          width: w / 2,
+          height: 150,
+          child: GridView.count(
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              crossAxisCount: 3,
+              children: avatars)));
+
+      children.add(SizedBox(
+        width: w / 2,
+        height: 50,
+        child: TextField(
+            focusNode: focusNode,
+            autofocus: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            keyboardType: TextInputType.name,
+            //onChanged: onClientNameChanged,
+            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+      ));
+    } else {
+      children.add(const SizedBox(height: 1));
+    }
+
+    return children;
+  }
+
+  buildSpinner(w) {
+    if (allowClientLogin || allowServerLogin) {
+      return const SizedBox(width: 1, height: 1);
+    }
+    return SizedBox(
+        width: w * 2 / 3, height: w * 2 / 3, child: WIDGETS.buildRadar());
+  }
+  /*
+    return Scaffold(
+        appBar: AppBar(
+            leading: WIDGETS.heartbeatIcon(anotherQuizMasterIsRunning),
             title: const Text("Buzzer - Searching...")),
         backgroundColor: Colors.black,
         floatingActionButton: fab,
         body: Center(
             child:
                 Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          messageOrInput(w),
+          Container(
+              alignment: Alignment.topRight,
+              child: Text(
+                "Text",
+                style: TextStyle(color: Colors.white),
+              )),
+          messageOrInputs(w),
           const SizedBox(height: 20),
           SizedBox(
               width: w * 2 / 3, height: w * 2 / 3, child: WIDGETS.buildRadar())
         ])));
   }
+  */
 }
