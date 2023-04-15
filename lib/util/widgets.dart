@@ -106,14 +106,13 @@ class WIDGETS {
     );
   }
 
-  static Widget tamilText(String text, double fontSize,
-      {Color color = Colors.white}) {
+  static Widget tamilText(String text, double fontSize) {
     return Text(text,
         style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.bold,
-            fontFamily: "Catamaran-VariableFont_wght",
-            color: color));
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          fontFamily: "Catamaran-VariableFont_wght",
+        ));
   }
 
   static Widget appBarTitle({String name = ""}) {
