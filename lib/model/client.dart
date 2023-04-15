@@ -22,6 +22,9 @@ class BuzzClient {
   String get name => data[BuzzDef.name]!;
   int get score => data[BuzzDef.score]!;
 
+  void setName(String name) => data[BuzzDef.name] = name;
+  void setAvatar(int avatar) => data[BuzzDef.avatar] = avatar;
+
   void setScore(int score) => data[BuzzDef.score] = score;
 
   final BuzzMap data;

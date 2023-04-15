@@ -67,6 +67,15 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       // Client has an id but server has not processed the registration
       //    to create a client card.
       if (client != null) {
+        if (msg.cmd == BuzzDef.newClientRequest) {
+          //
+          // The client could is RE-JOINING the game.
+          // Could be a name change or a avatar change
+          // But comming from the same device
+          //
+          processRejoinClient(client, msg);
+          return;
+        }
         onClientMessage(msg, client);
         return;
       }
@@ -115,6 +124,39 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     Log.log(ncResponse.toSocketMsg());
     StaticSingleMultiCast.sendBuzzMsg(ncResponse);
+    GameCache.dump();
+  }
+
+  ///////////////////////////////////////////////////////////////////
+  ///
+  processRejoinClient(BuzzClient client, BuzzMsg msg) {
+    assert(msg.cmd == BuzzDef.newClientRequest); // same message
+
+    String id = msg.data[BuzzDef.id];
+    assert(client.id == id);
+
+    String name = msg.data[BuzzDef.name];
+    int avatar = msg.data[BuzzDef.avatar];
+
+    if (name.isEmpty) name = "Unknown";
+    if (avatar < 1) avatar = 1;
+
+    setState(() {
+      client.setName(name);
+      client.setAvatar(avatar);
+
+      msg.data[BuzzDef.name] = name;
+      msg.data[BuzzDef.avatar] = avatar;
+    });
+
+    final BuzzMsg ncResponse = BuzzMsg(
+        BuzzDef.server, BuzzDef.newClientResponse, msg.data,
+        targetId: id);
+
+    Log.log(ncResponse.toSocketMsg());
+    StaticSingleMultiCast.sendBuzzMsg(ncResponse);
+
+    // TODO GameCache.addRejoinClient(id, name);
     GameCache.dump();
   }
 
@@ -710,11 +752,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       return;
     }
 
-    if (msg.cmd == BuzzDef.rejoinClientRequest) {
-      await processRejoinClient(msg);
-      return;
-    }
-
     if (msg.cmd == BuzzDef.buzzYes || msg.cmd == BuzzDef.buzzNo) {
       processClientBuzz(client, msg);
       return;
@@ -734,15 +771,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     final BuzzClient? client = clients.findById(id);
     assert(client != null);
     client?.updated = DateTime.now();
-  }
-
-  processRejoinClient(BuzzMsg msg) {
-    assert(msg.cmd == BuzzDef.rejoinClientRequest);
-
-    final String id = msg.data[BuzzDef.id];
-    final String name = msg.data[BuzzDef.name];
-    // TODO GameCache.addRejoinClient(id, name);
-    GameCache.dump();
   }
 
   processClientBuzz(BuzzClient client, BuzzMsg msg) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 //import 'dart:convert';
 
+import 'package:buzzer/model/client.dart';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/log.dart';
@@ -11,6 +12,7 @@ import '../model/defs.dart';
 class StaticSingleMultiCast {
   static final address = InternetAddress(CONST.multicastIP);
   static final port = CONST.multicastPort;
+
   static final StreamController<BuzzMsg> initialQueue =
       StreamController<BuzzMsg>();
   static final StreamController<BuzzMsg> mainQueue =
@@ -34,14 +36,22 @@ class StaticSingleMultiCast {
         var datagram = socket.receive();
         if (datagram != null) {
           final String str = String.fromCharCodes(datagram.data);
+
+          // Add unfiltered messages to android multiplexor queue
           androidOutQueue.add(str);
+
           // Filter our own messages out
           final sourceAddress = datagram.address;
           if (sourceAddress != InternetAddress.anyIPv4 &&
               sourceAddress != InternetAddress.loopbackIPv4) {
-            Log.log('StaticSingleMultiCast Received: $str');
             final BuzzMsg? msg = BuzzMsg.fromString(str);
             if (msg != null) {
+
+              if (msg.cmd != BuzzDef.hbq && msg.cmd != BuzzDef.hbr) {
+                Log.log('StaticSingleMultiCast Received: $str');
+              }
+
+              // Add this filtered message to the server queue
               initialQueue.add(msg);
               mainQueue.add(msg);
             } else {
@@ -80,7 +90,7 @@ class StaticSingleMultiCast {
 
   static Future<int> sendBuzzMsg(BuzzMsg msg) async {
     String smsg = msg.toSocketMsg();
-    if (msg.cmd != BuzzDef.hbq) {
+    if (msg.cmd != BuzzDef.hbq && msg.cmd != BuzzDef.hbr) {
       Log.log('StaticSingleMultiCast Sent sendBuzzMsg: $smsg');
     }
     return await awaitSend(smsg);

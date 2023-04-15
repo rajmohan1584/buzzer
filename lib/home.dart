@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:buzzer/model/constants.dart';
+import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/log.dart';
@@ -38,10 +39,13 @@ class _HomeState extends State<Home> {
   bool allowServerLogin = false;
   bool allowClientLogin = false;
 
-  String userName = ""; // TODO - Get it from cache.
-  int userAvatar = -1; // Get it from cache.
+  // Get it from cache later
+  late String userId;
+  late String userName;
+  late int userAvatar;
 
   final passKeyController = TextEditingController();
+  final userNameController = TextEditingController();
 
   @override
   void initState() {
@@ -56,6 +60,13 @@ class _HomeState extends State<Home> {
     _streamSubscription =
         StaticSingleMultiCast.initialQueue.stream.listen(onServerMessage);
 
+    // Get it from cache later
+    BuzzMap? savedUser = GameCache.getSavedClientFromCache();
+    userId = savedUser?[BuzzDef.id] ?? "";
+    userName = savedUser?[BuzzDef.name] ?? "";
+    userAvatar = savedUser?[BuzzDef.avatar] ?? 0;
+
+    userNameController.text = userName;
     super.initState();
   }
 
@@ -134,7 +145,7 @@ class _HomeState extends State<Home> {
         context,
         MaterialPageRoute(
             builder: (BuildContext context) =>
-                BuzzClientScreen(userName, userAvatar)));
+                BuzzClientScreen(userId, userName, userAvatar)));
   }
 
   void gotoServer() {
@@ -379,6 +390,7 @@ class _HomeState extends State<Home> {
             enableSuggestions: false,
             autocorrect: false,
             keyboardType: TextInputType.name,
+            controller: userNameController,
             onChanged: onClientNameChanged,
             style: TextStyle(fontSize: 32, color: CONST.textColor)),
       ));

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:buzzer/client/saved_user_datail.dart';
 import 'package:buzzer/model/constants.dart';
+import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/server_direct.dart';
 import 'package:buzzer/widgets/top_buzzers.dart';
 import 'package:flutter/material.dart';
@@ -17,10 +19,12 @@ import '../net/single_multicast.dart';
 const bool bellAudioEnabled = false;
 
 class BuzzClientScreen extends StatefulWidget {
+  final String userId;
   final String userName;
   final int userAvatar;
 
-  const BuzzClientScreen(this.userName, this.userAvatar, {super.key});
+  const BuzzClientScreen(this.userId, this.userName, this.userAvatar,
+      {super.key});
 
   @override
   State<BuzzClientScreen> createState() => _BuzzClientScreenState();
@@ -28,11 +32,9 @@ class BuzzClientScreen extends StatefulWidget {
 
 class _BuzzClientScreenState extends State<BuzzClientScreen>
     with SingleTickerProviderStateMixin {
-  String id = "";
   BuzzState state = BuzzState.clientWaitingForServer;
   bool connected = false;
   int myScore = 0;
-  List<BuzzMsg> serverMessages = [];
   final audioPlayer = AudioPlayer();
   String error = "";
   int secondsRemaining = 0;
@@ -43,11 +45,13 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   bool alive = false;
   Map? topBuzzers;
 
+  late String userId;
   late String userName;
   late int userAvatar;
 
   @override
   void initState() {
+    userId = widget.userId;
     userName = widget.userName;
     userAvatar = widget.userAvatar;
 
@@ -92,8 +96,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Widget buildBody() {
     final List<Widget> children = buildPlayArea();
 
+    Widget card = GestureDetector(
+        onTap: () => {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const SavedUserDetail()))
+            },
+        child: buildMyself());
+
     return Column(children: [
-      buildMyself(),
+      card,
       const Divider(height: 2),
       const SizedBox(height: 30),
       ...children
@@ -148,26 +161,27 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   ///////////////////////////////////////////
   ///
   void registerUs() async {
-    if (id.isEmpty) {
+    if (userId.isEmpty) {
       // Client just came up.
       // Register as new client
       //
       final newId = await nanoid();
       setState(() {
-        id = newId;
+        userId = newId;
       });
-
-      // If the client has his own data - send it
-      final BuzzMap data = {
-        BuzzDef.id: newId,
-        BuzzDef.name: userName,
-        BuzzDef.avatar: userAvatar
-      };
-
-      BuzzMsg msg =
-          BuzzMsg(BuzzDef.client, BuzzDef.newClientRequest, data, sourceId: id);
-      await StaticSingleMultiCast.sendBuzzMsg(msg);
     }
+
+    // If the client has his own data - send it
+    final BuzzMap data = {
+      BuzzDef.id: userId,
+      BuzzDef.name: userName,
+      BuzzDef.avatar: userAvatar
+    };
+
+    BuzzMsg msg =
+        BuzzMsg(BuzzDef.client, BuzzDef.newClientRequest, data,
+        sourceId: userId);
+    await StaticSingleMultiCast.sendBuzzMsg(msg);
   }
 
   /////////////////////////////////////////////
@@ -314,7 +328,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
         final String topId = topBuzzers!["topId"] ?? "";
 
         children.add(const SizedBox(height: 20.0));
-        children.add(TopBuzzers(buzzers, id, topId));
+        children.add(TopBuzzers(buzzers, userId, topId));
         /*
         final List<dynamic> buzzers = topBuzzers!["buzzers"] ?? [];
         return TopBuzzers(buzzers);
@@ -328,17 +342,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   void onBuzzedYes() {
-    final buzz = BuzzMsg(BuzzDef.client, BuzzDef.buzzYes, {}, sourceId: id);
+    final buzz = BuzzMsg(BuzzDef.client, BuzzDef.buzzYes, {}, sourceId: userId);
     StaticSingleMultiCast.sendBuzzMsg(buzz);
   }
 
   void onBuzzedNo() {
-    final buzz = BuzzMsg(BuzzDef.client, BuzzDef.buzzNo, {}, sourceId: id);
+    final buzz = BuzzMsg(BuzzDef.client, BuzzDef.buzzNo, {}, sourceId: userId);
     StaticSingleMultiCast.sendBuzzMsg(buzz);
   }
 
   void sendPingToServer() {
-    final ping = BuzzMsg(BuzzDef.client, BuzzDef.ping, {}, sourceId: id);
+    final ping = BuzzMsg(BuzzDef.client, BuzzDef.ping, {}, sourceId: userId);
     StaticSingleMultiCast.sendBuzzMsg(ping);
   }
 
@@ -351,7 +365,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     }
 
     // We are not the target of this message;
-    if (msg.targetId != id && msg.targetId != 'ALL') {
+    if (msg.targetId != userId && msg.targetId != 'ALL') {
       return;
     }
 
@@ -369,10 +383,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     if (msg.cmd == BuzzDef.newClientResponse) {
       return processNewClientResponse(msg);
-    }
-
-    if (msg.cmd == BuzzDef.rejoinClientResponse) {
-      return processRejoinClient(msg);
     }
 
     if (msg.cmd == BuzzDef.startRound) {
@@ -415,7 +425,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   processPing() {
     // Server sent a ping.
     ringBell();
-    final hb = BuzzMsg(BuzzDef.client, BuzzDef.pong, {}, sourceId: id);
+    final hb = BuzzMsg(BuzzDef.client, BuzzDef.pong, {}, sourceId: userId);
     StaticSingleMultiCast.sendBuzzMsg(hb);
   }
 
@@ -424,8 +434,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     // Race condition.
     // The client object is created but not registered and we dont have an ID.
-    if (id.isNotEmpty) {
-      final hb = BuzzMsg(BuzzDef.client, BuzzDef.hbr, {}, sourceId: id);
+    if (userId.isNotEmpty) {
+      final hb = BuzzMsg(BuzzDef.client, BuzzDef.hbr, {}, sourceId: userId);
       StaticSingleMultiCast.sendBuzzMsg(hb);
     }
   }
@@ -435,7 +445,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     // Get the new client data from server
     String name = msg.data[BuzzDef.name] ?? "";
-    int avatar = msg.data[BuzzDef.avatar] ?? -1;
+    int avatar = msg.data[BuzzDef.avatar] ?? 0;
 
     //
     // Cannot be empty
@@ -450,6 +460,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       userName = name;
       userAvatar = avatar;
     });
+
+    GameCache.saveClientInCache(msg.data);
   }
 
   processRejoinClient(BuzzMsg msg) {

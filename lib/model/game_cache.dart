@@ -111,8 +111,9 @@ class GameCache {
     String id = data[BuzzDef.id];
     assert(id.isNotEmpty);
 
+    // Try to use the client passed in data (from cache)
     String name = data[BuzzDef.name] ?? "";
-    int avatar = data[BuzzDef.avatar] ?? -1;
+    int avatar = data[BuzzDef.avatar] ?? 0;
 
     String newName = name.isEmpty ? 'Participant_$count' : name;
     int newAvatar = avatar <= 1
@@ -202,6 +203,29 @@ class GameCache {
     client[BuzzDef.score] = score;
     await setClient(id, client);
     return true;
+  }
+
+  //////////////////////////////////////////////////////////////////
+  ///
+  /// This will be called by the client.
+  static BuzzMap? getSavedClientFromCache() {
+    // onlu one client can be saved.
+    // If running multiple instane of the program on the same box
+    //   it may not work
+    String sClient = _prefs.getString(BuzzDef.savedClient) ?? "";
+    if (sClient.isEmpty) {
+      return null;
+    }
+    BuzzMap savedClient = json.decode(sClient);
+    return savedClient;
+  }
+
+  //////////////////////////////////////////////////////////////////
+  ///
+  /// This will be called by the client.
+  static Future saveClientInCache(BuzzMap client) async {
+    String sClient = json.encode(client);
+    await _prefs.setString(BuzzDef.savedClient, sClient);
   }
 }
 

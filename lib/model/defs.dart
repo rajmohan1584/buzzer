@@ -4,10 +4,10 @@ class BuzzDef {
   static get board => "B"; // Score Board
 
   static get newClientRequest => "NCQ";
-  static get rejoinClientRequest => "RCQ";
+  //static get rejoinClientRequest => "RCQ";
 
   static get newClientResponse => "NCR";
-  static get rejoinClientResponse => "RCR";
+  //static get rejoinClientResponse => "RCR";
 
   static get lgq => "LGQ"; // Login Request
   static get lgr => "LGR"; // Login Response
@@ -40,6 +40,9 @@ class BuzzDef {
   static get clients => "CLIENTS";
   static get count => "COUNT";
   static get sec => "SEC";
+
+  // Client data - only one per client per box.
+  static get savedClient => "SAVED-CLIENT";
 }
 
 typedef BuzzMap = Map<String, dynamic>;
