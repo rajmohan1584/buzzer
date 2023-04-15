@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/net/server_direct.dart';
 import 'package:buzzer/widgets/top_buzzers.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,10 @@ import '../net/single_multicast.dart';
 const bool bellAudioEnabled = false;
 
 class BuzzClientScreen extends StatefulWidget {
-  const BuzzClientScreen({super.key});
+  final String userName;
+  final int userAvatar;
+
+  const BuzzClientScreen(this.userName, this.userAvatar, {super.key});
 
   @override
   State<BuzzClientScreen> createState() => _BuzzClientScreenState();
@@ -27,8 +31,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   String id = "";
   BuzzState state = BuzzState.clientWaitingForServer;
   bool connected = false;
-  final userController = TextEditingController();
-  String userName = "";
   int myScore = 0;
   List<BuzzMsg> serverMessages = [];
   final audioPlayer = AudioPlayer();
@@ -41,12 +43,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   bool alive = false;
   Map? topBuzzers;
 
+  late String userName;
+  late int userAvatar;
+
   @override
   void initState() {
+    userName = widget.userName;
+    userAvatar = widget.userAvatar;
+
     Log.log('Client InitState');
     ServerDirectReceiver.start();
 
-    userController.text = "Raj";
     startHeartbeatCheckTimer();
 
     StaticSingleMultiCast.mainQueue.stream.listen((BuzzMsg msg) {
@@ -56,12 +63,13 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       onServerMessage(msg);
     });
 
+    registerUs();
+
     super.initState();
   }
 
   @override
   void dispose() {
-    userController.dispose();
     audioPlayer.dispose();
     super.dispose();
   }
@@ -93,12 +101,14 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   Widget buildMyself() {
-    final name = Text(userName,
-        style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
+    final color = alive ? CONST.textColor : Colors.red;
+
+    final name = WIDGETS.clientName(userName);
     Widget row = Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          WIDGETS.clientAvatar(userAvatar, color),
           name,
           WIDGETS.nameValue("SCORE", "$myScore", fontSize: 30.0),
           WIDGETS.bellIconButton(() => sendPingToServer(),
@@ -141,13 +151,21 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     if (id.isEmpty) {
       // Client just came up.
       // Register as new client
+      //
       final newId = await nanoid();
       setState(() {
         id = newId;
       });
 
+      // If the client has his own data - send it
+      final BuzzMap data = {
+        BuzzDef.id: newId,
+        BuzzDef.name: userName,
+        BuzzDef.avatar: userAvatar
+      };
+
       BuzzMsg msg =
-          BuzzMsg(BuzzCmd.client, BuzzCmd.newClientRequest, {}, sourceId: id);
+          BuzzMsg(BuzzDef.client, BuzzDef.newClientRequest, data, sourceId: id);
       await StaticSingleMultiCast.sendBuzzMsg(msg);
     }
   }
@@ -161,8 +179,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   onHeartbeatCheckTimer(_) async {
-    registerUs();
-
     Duration d = DateTime.now().difference(lastHeartbeatTime);
     final bool newAlive = d.inSeconds <= 3;
     setState(() {
@@ -217,48 +233,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   /*
-  void onLogin() async {
-    if (!connected) {
-      connectToServerAndListen();
-    }
-
-    if (!connected) {
-      setState(() {
-        error = "Socket not connected";
-      });
-      return;
-    }
-
-    final user = userController.text;
-    if (user.isEmpty) return;
-
-    final data = {"user": user};
-    setState(() {
-      userName = user;
-    });
-    final loginRequest = BuzzMsg(BuzzCmd.client, BuzzCmd.lgq, data);
-    sendMessageToServer(loginRequest);
-
-    setBuzzState(BuzzState.clientWaitingForCmd);
-  }
-
-  Widget buildWaitingToLogin() {
-    return Center(
-        child: Padding(
-      padding: const EdgeInsets.all(30.0),
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            TextField(
-              controller: userController,
-              decoration: const InputDecoration(
-                  hintText: 'Name', labelText: 'Enter Name'),
-            ),
-            ElevatedButton(onPressed: onLogin, child: const Text("Join")),
-          ]),
-    ));
-  }
 
   Widget buildWaitingForLoginResponse() {
     return Center(
@@ -354,17 +328,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   }
 
   void onBuzzedYes() {
-    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzYes, {}, sourceId: id);
+    final buzz = BuzzMsg(BuzzDef.client, BuzzDef.buzzYes, {}, sourceId: id);
     StaticSingleMultiCast.sendBuzzMsg(buzz);
   }
 
   void onBuzzedNo() {
-    final buzz = BuzzMsg(BuzzCmd.client, BuzzCmd.buzzNo, {}, sourceId: id);
+    final buzz = BuzzMsg(BuzzDef.client, BuzzDef.buzzNo, {}, sourceId: id);
     StaticSingleMultiCast.sendBuzzMsg(buzz);
   }
 
   void sendPingToServer() {
-    final ping = BuzzMsg(BuzzCmd.client, BuzzCmd.ping, {}, sourceId: id);
+    final ping = BuzzMsg(BuzzDef.client, BuzzDef.ping, {}, sourceId: id);
     StaticSingleMultiCast.sendBuzzMsg(ping);
   }
 
@@ -372,7 +346,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   ///
   onServerMessage(BuzzMsg msg) {
     // Receiving our own message.
-    if (msg.source == BuzzCmd.client) {
+    if (msg.source == BuzzDef.client) {
       return;
     }
 
@@ -381,33 +355,33 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       return;
     }
 
-    if (msg.cmd == BuzzCmd.hbq) {
+    if (msg.cmd == BuzzDef.hbq) {
       return processHeartbeat(msg);
     }
 
-    if (msg.cmd == BuzzCmd.ping) {
+    if (msg.cmd == BuzzDef.ping) {
       return processPing();
     }
 
-    if (msg.cmd == BuzzCmd.pong) {
+    if (msg.cmd == BuzzDef.pong) {
       return flashBell();
     }
 
-    if (msg.cmd == BuzzCmd.newClientResponse) {
+    if (msg.cmd == BuzzDef.newClientResponse) {
       return processNewClientResponse(msg);
     }
 
-    if (msg.cmd == BuzzCmd.rejoinClientResponse) {
+    if (msg.cmd == BuzzDef.rejoinClientResponse) {
       return processRejoinClient(msg);
     }
 
-    if (msg.cmd == BuzzCmd.startRound) {
+    if (msg.cmd == BuzzDef.startRound) {
       setBuzzState(BuzzState.clientReady);
       audioTheriyuma();
       return;
     }
 
-    if (msg.cmd == BuzzCmd.endRound) {
+    if (msg.cmd == BuzzDef.endRound) {
       setState(() {
         topBuzzers = null;
       });
@@ -415,23 +389,23 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       return;
     }
 
-    if (msg.cmd == BuzzCmd.countdown) {
-      int sec = msg.data["sec"] ?? 0;
+    if (msg.cmd == BuzzDef.countdown) {
+      int sec = msg.data[BuzzDef.sec] ?? 0;
       setState(() {
         secondsRemaining = sec;
       });
       return;
     }
 
-    if (msg.cmd == BuzzCmd.score) {
-      int score = msg.data["score"] ?? 0;
+    if (msg.cmd == BuzzDef.score) {
+      int score = msg.data[BuzzDef.score] ?? 0;
       setState(() {
         myScore = score;
       });
       return;
     }
 
-    if (msg.cmd == BuzzCmd.topBuzzers) {
+    if (msg.cmd == BuzzDef.topBuzzers) {
       setState(() {
         topBuzzers = msg.data;
       });
@@ -441,7 +415,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   processPing() {
     // Server sent a ping.
     ringBell();
-    final hb = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {}, sourceId: id);
+    final hb = BuzzMsg(BuzzDef.client, BuzzDef.pong, {}, sourceId: id);
     StaticSingleMultiCast.sendBuzzMsg(hb);
   }
 
@@ -451,61 +425,34 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     // Race condition.
     // The client object is created but not registered and we dont have an ID.
     if (id.isNotEmpty) {
-      final hb = BuzzMsg(BuzzCmd.client, BuzzCmd.hbr, {}, sourceId: id);
+      final hb = BuzzMsg(BuzzDef.client, BuzzDef.hbr, {}, sourceId: id);
       StaticSingleMultiCast.sendBuzzMsg(hb);
     }
   }
 
   processNewClientResponse(BuzzMsg msg) {
     Log.log('processNewClient ${msg.toSocketMsg()}');
+
+    // Get the new client data from server
+    String name = msg.data[BuzzDef.name] ?? "";
+    int avatar = msg.data[BuzzDef.avatar] ?? -1;
+
+    //
+    // Cannot be empty
+    // The server should return the data passed in by the client
+    // or
+    // If empty, the server should have assigned a new name and avatar
+    //
+    assert(name.isNotEmpty);
+    assert(avatar >= 1);
+
     setState(() {
-      userName = msg.data["name"] ?? "Unknown";
-      Log.log("Setting userNAme to $userName");
+      userName = name;
+      userAvatar = avatar;
     });
   }
 
   processRejoinClient(BuzzMsg msg) {
     Log.log('processRejoinClient');
   }
-
-  /*
-  // Process Server messages
-  void handleServerMessage(IO.Socket socket, BuzzMsg msg) {
-    Log.log('From Server: ${msg.toSocketMsg()}');
-
-    setState(() {
-      serverMessages.insert(0, msg);
-    });
-
-    if (msg.cmd == BuzzCmd.ping) {
-      ringBell();
-      final pong = BuzzMsg(BuzzCmd.client, BuzzCmd.pong, {});
-      sendMessageToServer(pong);
-    } else if (msg.cmd == BuzzCmd.pong) {
-      flashBell();
-    } else if (msg.cmd == BuzzCmd.showBuzz) {
-      setBuzzState(BuzzState.clientReady);
-      audioTheriyuma();
-    } else if (msg.cmd == BuzzCmd.hideBuzz) {
-      setState(() {
-        topBuzzers = null;
-      });
-      setBuzzState(BuzzState.clientWaitingForCmd);
-    } else if (msg.cmd == BuzzCmd.topBuzzers) {
-      setState(() {
-        topBuzzers = msg.data;
-      });
-    } else if (msg.cmd == BuzzCmd.countdown) {
-      double sec = msg.data["sec"] ?? 0;
-      setState(() {
-        secondsRemaining = sec;
-      });
-    } else if (msg.cmd == BuzzCmd.score) {
-      int score = msg.data["score"] ?? 0;
-      setState(() {
-        myScore = score;
-      });
-    }
-  }
-  */
 }

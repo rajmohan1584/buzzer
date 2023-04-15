@@ -42,7 +42,7 @@ class ServerMulticastSender {
 
   int sendBuzzMsg(BuzzMsg msg) {
     String smsg = msg.toSocketMsg();
-    if (msg.cmd != BuzzCmd.hbq) {
+    if (msg.cmd != BuzzDef.hbq) {
       Log.log('ServerMulticastSender Sent sendBuzzMsg: $smsg');
     }
     return send(smsg);

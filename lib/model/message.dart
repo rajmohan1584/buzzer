@@ -21,13 +21,13 @@ class BuzzMsg {
   // "" if server is the target
   String targetId;
 
-  Map<String, dynamic> data = {};
+  BuzzMap data = {};
   BuzzMsg(this.source, this.cmd, this.data,
       {this.sourceId = "", this.targetId = ""}) {
-    if (source == BuzzCmd.server) {
+    if (source == BuzzDef.server) {
       assert(sourceId.isEmpty);
       assert(targetId.isNotEmpty);
-    } else if (source == BuzzCmd.client) {
+    } else if (source == BuzzDef.client) {
       assert(sourceId.isNotEmpty);
       assert(targetId.isEmpty);
     } else {
@@ -63,7 +63,7 @@ class BuzzMsg {
     String cmd = a[1]!;
     String sourceId = a[2] ?? "";
     String targetId = a[3] ?? "";
-    Map<String, dynamic> data = json.decode(a[4]!);
+    BuzzMap data = json.decode(a[4]!);
 
     return BuzzMsg(source, cmd, data, sourceId: sourceId, targetId: targetId);
   }

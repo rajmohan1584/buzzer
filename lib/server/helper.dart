@@ -18,8 +18,7 @@ class ServerHelper {
     }
     */
 
-    final name = Text(client.name,
-        style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold));
+    final name = WIDGETS.clientName(client.name);
 
     Widget row =
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

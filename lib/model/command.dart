@@ -1,4 +1,4 @@
-class BuzzCmd {
+class BuzzDef {
   static get client => "C"; // Client
   static get server => "S"; // Server
   static get board => "B"; // Score Board
@@ -30,4 +30,16 @@ class BuzzCmd {
   static get countdown => "COUNTDOWN";
   static get score => "SCORE";
   static get topBuzzers => "TOP-BUZZERS";
+
+  static get id => "ID";
+  static get name => "NAME";
+  static get avatar => "AVATAR";
+
+  static get app => "APP";
+  static get version => "VERSION";
+  static get clients => "CLIENTS";
+  static get count => "COUNT";
+  static get sec => "SEC";
 }
+
+typedef BuzzMap = Map<String, dynamic>;

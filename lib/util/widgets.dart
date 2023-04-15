@@ -2,6 +2,7 @@ import 'package:buzzer/model/command.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/heartbeat.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shake_animated/flutter_shake_animated.dart';
@@ -16,6 +17,20 @@ class WIDGETS {
         width: width, height: height, color: color);
   }
 
+  static Widget clientAvatar(int avatarId, Color bkgColor) {
+    final borderRadius = BorderRadius.circular(15);
+
+    return Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: bkgColor, borderRadius: borderRadius),
+        child: ClipRect(
+          child: SizedBox.fromSize(
+              size: const Size.fromRadius(50),
+              child: Image.asset('assets/images/$avatarId.png',
+                  fit: BoxFit.cover)),
+        ));
+  }
+
   static Widget joinButton(Function() onPressed) {
     return ElevatedButton(onPressed: onPressed, child: const Text("JOIN"));
   }
@@ -24,8 +39,10 @@ class WIDGETS {
     return ElevatedButton(onPressed: onPressed, child: const Text("CREATE"));
   }
 
-  static Widget nameText(String name, {fontSize = 14.0}) {
-    return Text(name, style: TextStyle(fontSize: fontSize));
+  static Widget nameText(String name,
+      {fontSize = 14.0, fontWeight = FontWeight.normal}) {
+    return Text(name,
+        style: TextStyle(fontSize: fontSize, fontWeight: fontWeight));
   }
 
   static Widget valueText(String value, {fontSize = 14.0}) {
@@ -108,6 +125,14 @@ class WIDGETS {
             color: Colors.white));
   }
 
+  static Widget clientName(String name) {
+    if (LANG.isTamil(name)) {
+      return tamilText(name, 20);
+    }
+
+    return nameText(name, fontSize: 20.0, fontWeight: FontWeight.bold);
+  }
+
   static Widget yesBuzzerTitle() {
     return const Text("தெரியும்",
         style: TextStyle(
@@ -169,8 +194,8 @@ class WIDGETS {
 
   static Widget buzzedStateIcon(String buzzedState) {
     String png = "buzzer-null.png";
-    if (buzzedState == BuzzCmd.buzzYes) png = "buzzer-yes.png";
-    if (buzzedState == BuzzCmd.buzzNo) png = "buzzer-no.png";
+    if (buzzedState == BuzzDef.buzzYes) png = "buzzer-yes.png";
+    if (buzzedState == BuzzDef.buzzNo) png = "buzzer-no.png";
     return assetImage(png, width: 40, height: 40);
   }
 

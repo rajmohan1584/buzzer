@@ -1,17 +1,10 @@
 import 'dart:convert';
-import 'package:nanoid/non_secure.dart';
+import 'package:buzzer/model/command.dart';
+import 'package:buzzer/util/util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tuple/tuple.dart';
 
 import '../util/log.dart';
 
-const _app = "app";
-const _version = "version";
-const _clients = "clients";
-const _count = "count";
-
-const _name = "name";
-const _score = "score";
 int _c = 0;
 
 class GameCache {
@@ -30,15 +23,15 @@ class GameCache {
     for (var cid in clients) {
       await _prefs.remove(cid);
     }
-    await _prefs.remove(_clients);
-    await _prefs.remove(_count);
+    await _prefs.remove(BuzzDef.clients);
+    await _prefs.remove(BuzzDef.count);
   }
 
   //////////////////////////////////////////////////////////////////////
   // hasCache
   //
   static bool hasCache() {
-    String? sClients = _prefs.getString(_clients);
+    String? sClients = _prefs.getString(BuzzDef.clients);
     if (sClients == null) {
       return false;
     }
@@ -49,7 +42,7 @@ class GameCache {
   // hasCache
   //
   static Future<int> getNextClientCount() async {
-    int? count = _prefs.getInt(_count);
+    int? count = _prefs.getInt(BuzzDef.count);
     if (count == null) {
       // first participent
       count = 1;
@@ -57,7 +50,7 @@ class GameCache {
       count++;
     }
 
-    await _prefs.setInt(_count, count);
+    await _prefs.setInt(BuzzDef.count, count);
 
     return count;
   }
@@ -71,7 +64,7 @@ class GameCache {
     Log.log("GameDump> Game Cache has ${clients.length} clients.");
 
     for (var cid in clients) {
-      final Map<String, dynamic>? client = getClient(cid);
+      final BuzzMap? client = getClient(cid);
 
       if (client == null) {
         // Bug. Did not cleanup?
@@ -87,7 +80,7 @@ class GameCache {
   // Get Set clients
   //
   static List<String> getClients() {
-    String? sClients = _prefs.getString(_clients);
+    String? sClients = _prefs.getString(BuzzDef.clients);
     if (sClients != null) {
       // clients is a csv
       return sClients.split(",");
@@ -97,16 +90,16 @@ class GameCache {
 
   static setClients(List<String> clients) async {
     String sClients = clients.join(",");
-    await _prefs.setString(_clients, sClients);
+    await _prefs.setString(BuzzDef.clients, sClients);
   }
 
   //////////////////////////////////////////////////////////////////////
   // Add Remove client
   //
-  static Future<String> addNewClient(String id) async {
+  static Future<BuzzMap> addNewClient(BuzzMap data) async {
     //
     // There is nothing to check.
-    // A new name gets generated for each new client.
+    // If client did not identify him/herself, a new name gets generated.
     // Also if a disconnected client comes in as a new one,
     //    the score will be set to zero and the old connection will be stale.
     //    And the stale connection should be purged later - // TODO
@@ -114,7 +107,17 @@ class GameCache {
 
     // Create a new name
     int count = ++_c; //await getNextClientCount();
-    String newName = 'Participant_$count';
+
+    String id = data[BuzzDef.id];
+    assert(id.isNotEmpty);
+
+    String name = data[BuzzDef.name] ?? "";
+    int avatar = data[BuzzDef.avatar] ?? -1;
+
+    String newName = name.isEmpty ? 'Participant_$count' : name;
+    int newAvatar = avatar <= 1
+        ? UTIL.randomInt(min: 1, max: 6)
+        : avatar; // TODO - get the max from ??
 
     // Add the id to the array of client ids.
     List<String> clients = getClients();
@@ -123,12 +126,12 @@ class GameCache {
 
     // Also create a new key with id and the {}
     //assert(await getClient(id) == null);
-    Map<String, dynamic> client = {};
-    client[_name] = newName;
-    client[_score] = 0;
-    await setClient(id, client);
+    data[BuzzDef.name] = newName;
+    data[BuzzDef.avatar] = newAvatar;
+    data[BuzzDef.score] = 0;
+    await setClient(id, data);
 
-    return newName;
+    return data;
   }
 
 /*
@@ -171,17 +174,17 @@ class GameCache {
   //////////////////////////////////////////////////////////////////////
   // Set Get Client
   //
-  static Map<String, dynamic>? getClient(String id) {
+  static BuzzMap? getClient(String id) {
     String? sClient = _prefs.getString(id);
     if (sClient == null) {
       return null;
     }
 
-    Map<String, dynamic> client = json.decode(sClient);
+    BuzzMap client = json.decode(sClient);
     return client;
   }
 
-  static Future<bool> setClient(String id, Map<String, dynamic> client) async {
+  static Future<bool> setClient(String id, BuzzMap client) async {
     String sClient = json.encode(client);
     await _prefs.setString(id, sClient);
     return true;
@@ -191,12 +194,12 @@ class GameCache {
   // Set Get Client
   //
   static Future<bool> setScore(String id, int score) async {
-    Map<String, dynamic>? client = getClient(id);
+    BuzzMap? client = getClient(id);
     if (client == null) {
       return false;
     }
 
-    client[_score] = score;
+    client[BuzzDef.score] = score;
     await setClient(id, client);
     return true;
   }
@@ -209,7 +212,7 @@ class GameCache {
   // Name is optional (On a rejoin)
   // Will return name and score and ??
   //
-  static Future<Map<String, dynamic>> registerParticipant(String id,
+  static Future<BuzzMap> registerParticipant(String id,
       {String name = ""}) async {
     //
     // Check if the ID exists.
@@ -237,9 +240,9 @@ class GameCache {
 
     // Also create a new key with id and the {}
     //assert(await getClient(id) == null);
-    Map<String, dynamic> client = {};
-    client[_name] = newName;
-    client[_score] = 0;
+    BuzzMap client = {};
+    client[BuzzDef.name] = newName;
+    client[BuzzDefscore] = 0;
     await setClient(id, client);
 
     return newName;

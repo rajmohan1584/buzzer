@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class CONST {
   static String appVersion = "?.?.?";
   static String iPhoneIP = "192.168.50.250";
@@ -18,4 +20,6 @@ class CONST {
   static int clientMinScore = 0;
   static int clientMaxScore = 9999999;
   static int clientDeltaScore = 1;
+
+  static Color textColor = const Color(0xff82fb4c);
 }

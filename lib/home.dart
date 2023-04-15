@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/log.dart';
@@ -22,7 +23,6 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final FocusNode focusNode = FocusNode();
-  String mode = "idk"; // client, server
   bool isAndroid = Platform.isAndroid;
 
   final maxlen = 6;
@@ -33,18 +33,29 @@ class _HomeState extends State<Home> {
   Timer? quizMasterCheckTimer;
   DateTime radarStartTime = DateTime.now();
   StreamSubscription<BuzzMsg>? _streamSubscription;
+
+  bool showServerLogin = false;
   bool allowServerLogin = false;
   bool allowClientLogin = false;
 
   String userName = ""; // TODO - Get it from cache.
   int userAvatar = -1; // Get it from cache.
 
+  final passKeyController = TextEditingController();
+
   @override
   void initState() {
+    passkey = "";
+    showServerLogin = false;
+    allowServerLogin = false;
+    allowClientLogin = false;
+    anotherQuizMasterIsRunning = false;
+
     startQuizMasterCheckTimer();
-    resetAll();
+
     _streamSubscription =
         StaticSingleMultiCast.initialQueue.stream.listen(onServerMessage);
+
     super.initState();
   }
 
@@ -54,22 +65,12 @@ class _HomeState extends State<Home> {
     super.dispose();
   }
 
-  resetAll() {
-    setState(() {
-      passkey = "";
-      mode = "idk";
-      allowServerLogin = false;
-      allowClientLogin = false;
-      anotherQuizMasterIsRunning = false;
-    });
-  }
-
   /////////////////////////////////////////////////
   ///
   onServerMessage(BuzzMsg msg) {
     // Assert that there is no cross talk.
-    assert(msg.source == BuzzCmd.server);
-    assert(msg.cmd == BuzzCmd.hbq);
+    assert(msg.source == BuzzDef.server);
+    assert(msg.cmd == BuzzDef.hbq);
 
     setState(() {
       anotherQuizMasterIsRunning = true;
@@ -109,25 +110,10 @@ class _HomeState extends State<Home> {
         // Client Mode
         // Allow user to enter/change name and pick an avatar
         allowClientLogin = true;
-        /*
-        getClientInfo().then((value) {
-          // Check if we found a QuizMaster.
-          if (anotherQuizMasterIsRunning || isAndroid) {
-            Log.log('Another Server is running, GoToClient in a sec');
-
-            _streamSubscription?.cancel();
-            _streamSubscription = null;
-            stopQuizMasterCheckTimer();
-            Future.delayed(const Duration(milliseconds: 1000), () {
-              gotoClient();
-            });
-          }
-        });
-        */
       } else {
-        // This user may be the server. Let him login
+        // This user may be the server. Show the server login button
         setState(() {
-          allowServerLogin = true;
+          showServerLogin = true;
         });
       }
     }
@@ -139,11 +125,16 @@ class _HomeState extends State<Home> {
   }
 
   void gotoClient() {
-    // Leave the multicast listner on.
+    // House keeping.
+    _streamSubscription?.cancel();
+    _streamSubscription = null;
+    stopQuizMasterCheckTimer();
+
     Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzClientScreen()));
+            builder: (BuildContext context) =>
+                BuzzClientScreen(userName, userAvatar)));
   }
 
   void gotoServer() {
@@ -153,28 +144,38 @@ class _HomeState extends State<Home> {
             builder: (BuildContext context) => const BuzzServerScreen()));
   }
 
-  onTextChanged(String s) {
+  onPassKeyTextChanged(String s) {
     setState(() {
       passkey = s;
-      if (passkey.length == maxlen) {
-        if (passkey == secretKey) {
-          // success - goto server
-          Log.log('Login success. GoToServer in a sec');
-          mode = "server";
-          _streamSubscription?.cancel();
-          _streamSubscription = null;
-          Future.delayed(const Duration(milliseconds: 1000), () {
-            gotoServer();
-          });
-        } else {
-          // reset
-          resetAll();
-        }
+    });
+
+    if (passkey.length == maxlen) {
+      if (passkey == secretKey) {
+        // success - goto server
+        Log.log('Login success. GoToServer in a sec');
+        _streamSubscription?.cancel();
+        _streamSubscription = null;
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          gotoServer();
+        });
+      } else {
+        // reset
+        //resetAll();
+        // TODO - shakey shakey for wrong password
+        setState(() {
+          passKeyController.text = "";
+        });
       }
+    }
+  }
+
+  onClientNameChanged(String name) {
+    setState(() {
+      userName = name;
     });
   }
 
-  onServerLogin() {
+  onClickServerLogin() {
     if (testMode) {
       Log.log('Skip Login. GoToServer in a sec');
       _streamSubscription?.cancel();
@@ -185,20 +186,20 @@ class _HomeState extends State<Home> {
     }
 
     setState(() {
-      mode = "server";
+      allowServerLogin = true;
     });
 
     if (!testMode) {
+      // This is to automatically popup the keybord on phones.
       Future.delayed(const Duration(milliseconds: 100), () {
-        // Do something
         FocusScope.of(context).requestFocus(focusNode);
       });
     }
   }
 
-  onClientLogin() {}
+  /*
   Widget passwordInput() {
-    const green = Color(0xff82fb4c);
+    final green = CONST.textColor;
     final boxes = <Widget>[];
     for (var i = 0; i < maxlen; i++) {
       final len = passkey.length;
@@ -211,7 +212,7 @@ class _HomeState extends State<Home> {
           color: fillColor,
           borderRadius: BorderRadius.circular(50),
           border: Border.all(color: Colors.black, width: 2),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
               color: green,
               blurRadius: 30,
@@ -239,7 +240,7 @@ class _HomeState extends State<Home> {
             autocorrect: false,
             keyboardType: TextInputType.number,
             onChanged: onTextChanged,
-            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+            style: TextStyle(fontSize: 32, color: CONST.textColor)),
       );
     } else if (allowClientLogin) {
       return SizedBox(
@@ -253,12 +254,13 @@ class _HomeState extends State<Home> {
             autocorrect: false,
             keyboardType: TextInputType.number,
             onChanged: onTextChanged,
-            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+            style: TextStyle(fontSize: 32, color: CONST.textColor)),
       );
     } else {
-      return SizedBox(height: 1);
+      return const SizedBox(height: 1);
     }
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -269,12 +271,13 @@ class _HomeState extends State<Home> {
     w -= 50;
 
     Widget? fab;
-    if (allowServerLogin && mode == "idk") {
+    if (showServerLogin && !allowClientLogin) {
       fab = FloatingActionButton.extended(
-          onPressed: onServerLogin, label: const Text("Login as Quiz Master"));
+          onPressed: onClickServerLogin,
+          label: const Text("Login as Quiz Master"));
     } else if (allowClientLogin) {
       fab = FloatingActionButton.extended(
-          onPressed: onClientLogin, label: const Text("Let's Play"));
+          onPressed: gotoClient, label: const Text("Let's Play தெரியுமா"));
     }
 
     final children = <Widget>[
@@ -315,32 +318,24 @@ class _HomeState extends State<Home> {
           child: WIDGETS.assetImage("searching.png", width: 450, height: 150)));
     }
     children.add(
-      const Divider(indent: 50, endIndent: 50, color: Color(0xff82fb4c)),
+      Divider(indent: 50, endIndent: 50, color: CONST.textColor),
     );
+    children.add(const SizedBox(height: 10));
+
     return children;
   }
 
   List<Widget> buildInputs(w) {
     final List<Widget> children = [];
 
-    final borderRadius = BorderRadius.circular(15);
     final List<Widget> avatars = [];
     for (var i = 1; i <= 6; i++) {
-      final color = userAvatar == i ? const Color(0xff82fb4c) : Colors.black;
+      final color = userAvatar == i ? CONST.textColor : Colors.black;
       avatars.add(GestureDetector(
           onTap: () => setState(() {
                 userAvatar = userAvatar == i ? -1 : i;
               }),
-          child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration:
-                  BoxDecoration(color: color, borderRadius: borderRadius),
-              child: ClipRect(
-                child: SizedBox.fromSize(
-                    size: const Size.fromRadius(50),
-                    child:
-                        Image.asset('assets/images/$i.png', fit: BoxFit.cover)),
-              ))));
+          child: WIDGETS.clientAvatar(i, color)));
     }
 
     if (allowServerLogin) {
@@ -348,19 +343,22 @@ class _HomeState extends State<Home> {
         width: w / 2,
         height: 50,
         child: TextField(
+            textAlign: TextAlign.center,
+            maxLength: secretKey.length,
             focusNode: focusNode,
             autofocus: true,
             obscureText: true,
             enableSuggestions: false,
             autocorrect: false,
             keyboardType: TextInputType.number,
-            onChanged: onTextChanged,
-            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+            controller: passKeyController,
+            onChanged: onPassKeyTextChanged,
+            style: TextStyle(fontSize: 32, color: CONST.textColor)),
       ));
     } else if (allowClientLogin) {
       children.add(SizedBox(
           width: w / 2,
-          height: 150,
+          height: 175,
           child: GridView.count(
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
@@ -368,16 +366,21 @@ class _HomeState extends State<Home> {
               children: avatars)));
 
       children.add(SizedBox(
-        width: w / 2,
+        width: w / 1.5,
         height: 50,
         child: TextField(
+            textAlign: TextAlign.center,
+            maxLength: 25,
+            decoration: const InputDecoration(
+                hintText: "உ ண்   பெ ய ர்",
+                hintStyle: TextStyle(color: Colors.blueGrey)),
             focusNode: focusNode,
             autofocus: true,
             enableSuggestions: false,
             autocorrect: false,
             keyboardType: TextInputType.name,
-            //onChanged: onClientNameChanged,
-            style: const TextStyle(fontSize: 32, color: Color(0xff82fb4c))),
+            onChanged: onClientNameChanged,
+            style: TextStyle(fontSize: 32, color: CONST.textColor)),
       ));
     } else {
       children.add(const SizedBox(height: 1));

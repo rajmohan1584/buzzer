@@ -6,11 +6,8 @@ import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/log.dart';
 
 class BuzzClient {
-  String name;
   bool iAmReady = false;
   String buzzedState = "";
-  int score = 0;
-  final String id;
   bool bellRinging = false;
   bool bellFlashing = false;
   DateTime created = DateTime.now();
@@ -18,8 +15,17 @@ class BuzzClient {
   Duration? buzzedYesDelta;
   BuzzState state = BuzzState.clientWaitingToJoin;
   BuzzMsg? serverMsg;
-  BuzzClient(this.name, this.id);
   bool alive = true;
+
+  // These "!" will crash if null. Watch out
+  String get id => data[BuzzDef.id]!;
+  String get name => data[BuzzDef.name]!;
+  int get score => data[BuzzDef.score]!;
+
+  void setScore(int score) => data[BuzzDef.score] = score;
+
+  final BuzzMap data;
+  BuzzClient(this.data);
 
   performHealthCheck() {
     Duration d = DateTime.now().difference(updated);
@@ -43,9 +49,9 @@ class BuzzClients {
         dead++;
       }
 
-      if (c.buzzedState == BuzzCmd.buzzYes) {
+      if (c.buzzedState == BuzzDef.buzzYes) {
         yes++;
-      } else if (c.buzzedState == BuzzCmd.buzzNo) {
+      } else if (c.buzzedState == BuzzDef.buzzNo) {
         no++;
       } else {
         nota++;
@@ -78,13 +84,14 @@ class BuzzClients {
     }
   }
 
-  BuzzClient? add(String user, String id) {
+  BuzzClient? add(BuzzMap data) {
+    String id = data[BuzzDef.id];
     if (findById(id) != null) {
       Log.log('Duplicate name $id');
       return null;
     }
 
-    final client = BuzzClient(user, id);
+    final client = BuzzClient(data);
     clients.add(client);
 
     return client;
@@ -120,15 +127,15 @@ class BuzzClients {
 
   void sortByBuzzedUpdated() {
     clients.sort((a, b) {
-      if (a.buzzedState == BuzzCmd.buzzYes &&
-          b.buzzedState == BuzzCmd.buzzYes) {
+      if (a.buzzedState == BuzzDef.buzzYes &&
+          b.buzzedState == BuzzDef.buzzYes) {
         // both buzzed YES.
         // order by updated ASC
         return a.updated.compareTo(b.updated);
       }
 
-      if (a.buzzedState == BuzzCmd.buzzYes) return -1;
-      if (b.buzzedState == BuzzCmd.buzzYes) return 1;
+      if (a.buzzedState == BuzzDef.buzzYes) return -1;
+      if (b.buzzedState == BuzzDef.buzzYes) return 1;
 
       if (a.buzzedState.isEmpty && b.buzzedState.isEmpty) {
         // both have not replied - keep in middle.
@@ -149,7 +156,7 @@ class BuzzClients {
     int i = 0;
     String topId = "";
     for (var client in clients) {
-      if (client.buzzedState == BuzzCmd.buzzYes) {
+      if (client.buzzedState == BuzzDef.buzzYes) {
         i++;
         if (topId.isEmpty) {
           topId = client.id;

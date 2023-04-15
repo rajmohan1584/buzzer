@@ -6,11 +6,6 @@ import 'package:buzzer/util/log.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'package:buzzer/client/client.dart';
-//import 'package:buzzer/score_board/score_board.dart';
-import 'package:buzzer/server/server.dart';
-import 'package:buzzer/util/widgets.dart';
-
 import 'model/game_cache.dart';
 import 'net/single_multicast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -71,69 +66,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Home(),
+    return MaterialApp(
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      home: const Home(),
     );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
-
-  @override
-  MyHomePageState createState() {
-    return MyHomePageState();
-  }
-}
-
-class MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: WIDGETS.appBarTitle(),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            WIDGETS.clientButton(_onClient),
-            const SizedBox(
-              height: 20,
-            ),
-            WIDGETS.serverButton(_onServer)
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onClient() {
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzClientScreen()));
-  }
-
-  /*
-  void _onScoreBoard() {
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzScoreBoardScreen()));
-  }
-  */
-
-  void _onServer() {
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (BuildContext context) => const BuzzServerScreen()));
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
