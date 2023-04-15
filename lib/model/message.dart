@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:buzzer/model/command.dart';
+import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:intl/intl.dart';
 

@@ -5,7 +5,7 @@ import 'package:buzzer/model/message.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/log.dart';
 
-import '../model/command.dart';
+import '../model/defs.dart';
 
 //////////////////////////////////////////////////////
 // Server uses this to send messages to Clients

@@ -1,3 +1,4 @@
+import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/server_settings.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/cupertino.dart';
@@ -57,6 +58,24 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
   }
 
   Widget buildBody() {
+    Widget ip = Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            WIDGETS.tamilText("ஓய்ஃபை:   ", 30.0),
+            WIDGETS.nameText(CONST.myWifi, fontSize: 40.0)
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            WIDGETS.tamilText("ஐபி:   ", 30.0),
+            WIDGETS.nameText(CONST.myIP, fontSize: 40.0)
+          ],
+        )
+      ],
+    );
     Widget viewMode = Column(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -105,23 +124,25 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
     ]);
 
     final child = Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          const SizedBox(height: 5),
+          const SizedBox(height: 15),
           const Divider(height: 2, thickness: 2),
-          const SizedBox(height: 5),
+          const SizedBox(height: 15),
+          ip,
+          const SizedBox(height: 15),
+          const Divider(height: 2, thickness: 2),
+          const SizedBox(height: 15),
           viewMode,
-          const SizedBox(height: 5),
+          const SizedBox(height: 15),
           const Divider(height: 2, thickness: 2),
-          const SizedBox(height: 50),
-          const Divider(height: 2, thickness: 2),
-          const SizedBox(height: 5),
+          const SizedBox(height: 15),
           timout,
           buzzed,
           const SizedBox(height: 5),
           const Divider(height: 2, thickness: 2),
-          const SizedBox(height: 50),
+          const SizedBox(height: 15),
           actions
         ]);
 

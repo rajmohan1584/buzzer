@@ -2,7 +2,7 @@ import 'package:network_info_plus/network_info_plus.dart';
 
 final _networkInfo = NetworkInfo();
 
-class NET {
+class NET2_not_used {
   static Future<String> myIP() async {
     String? wifiIPv4 = await _networkInfo.getWifiIP();
     if (wifiIPv4 != null) return wifiIPv4;

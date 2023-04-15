@@ -11,7 +11,7 @@ import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:nanoid/async.dart';
 
-import '../model/command.dart';
+import '../model/defs.dart';
 import '../net/single_multicast.dart';
 
 const bool bellAudioEnabled = false;
@@ -283,7 +283,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     return [
       const SizedBox(height: 20),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        WIDGETS.tamilText("பதில் தெரியுமா?", 30, color: Colors.black),
+        WIDGETS.tamilText("பதில் தெரியுமா?", 30),
         const SizedBox(width: 30),
         WIDGETS.buildCountdownTime(secondsRemaining)
       ]),

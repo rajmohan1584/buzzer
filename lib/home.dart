@@ -9,7 +9,7 @@ import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'client/client.dart';
-import 'model/command.dart';
+import 'model/defs.dart';
 import 'model/message.dart';
 
 const testMode = false;
@@ -311,7 +311,7 @@ class _HomeState extends State<Home> {
       children.add(Container(
           alignment: Alignment.topLeft,
           child: WIDGETS.assetImage("quizmaster-pin.png",
-              width: 450, height: 150)));
+              width: 550, height: 150)));
     } else {
       children.add(Container(
           alignment: Alignment.topLeft,
@@ -390,7 +390,7 @@ class _HomeState extends State<Home> {
   }
 
   buildSpinner(w) {
-    if (allowClientLogin || allowServerLogin) {
+    if (allowClientLogin) {
       return const SizedBox(width: 1, height: 1);
     }
     return SizedBox(

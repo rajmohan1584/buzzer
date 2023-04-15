@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+// These are actually GLOBALs - TODO - rename to GLOBAL ?
 class CONST {
   static String appVersion = "?.?.?";
+  static String myIP = "?.?.?.?";
+  static String myWifi = "?";
   static String iPhoneIP = "192.168.50.250";
   static String macBookIP = "192.168.50.181";
   static String multicastIP = "239.1.2.3";

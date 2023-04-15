@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/util/log.dart';
@@ -18,7 +19,8 @@ class MultiplexorSender {
         client.add(s);
       }
     });
-    server = await HttpServer.bind('192.168.50.69', 8080);
+
+    server = await HttpServer.bind(CONST.myIP, 8080);
 
     Log.log(
         'MultiplexorSender> WebSocket server started on port ${server.port}');

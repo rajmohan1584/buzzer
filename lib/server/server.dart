@@ -17,7 +17,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 import 'package:buzzer/model/client.dart';
 import 'package:buzzer/model/message.dart';
-import 'package:buzzer/model/command.dart';
+import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/net/single_multicast.dart';
 
 const bool bellAudioEnabled = false;

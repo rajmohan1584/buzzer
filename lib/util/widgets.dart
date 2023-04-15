@@ -1,4 +1,4 @@
-import 'package:buzzer/model/command.dart';
+import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/heartbeat.dart';
