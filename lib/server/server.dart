@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
@@ -92,8 +93,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       processNewClient(msg);
     });
 
-    MultiplexorSender.start();
-
+    if (Platform.isWindows) {
+      MultiplexorSender.start();
+    }
     super.initState();
   }
 

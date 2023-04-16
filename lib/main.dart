@@ -14,14 +14,13 @@ import 'package:package_info_plus/package_info_plus.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await NUTIL.logInfo();
-
   await GameCache.init();
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   CONST.appVersion = packageInfo.version;
 
   if (Platform.isWindows) {
+    await NUTIL.logInfo();
     CONST.myIP = await NUTIL.myIP();
     CONST.myWifi = await NUTIL.myWifi();
   }

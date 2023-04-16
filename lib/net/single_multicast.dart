@@ -21,14 +21,24 @@ class StaticSingleMultiCast {
       StreamController<String>();
 
   static Future initListener() async {
-    final socket = await RawDatagramSocket.bind(
-      InternetAddress.anyIPv4,
-      port,
-      reuseAddress: true,
-      //reusePort: true,
-      //multicastLoopback: true,
-    );
-
+    late final RawDatagramSocket socket;
+    if (Platform.isMacOS) {
+      socket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        port,
+        reuseAddress: true,
+        reusePort: true,
+        //multicastLoopback: true,
+      );
+    } else {
+      socket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        port,
+        reuseAddress: true,
+        //reusePort: true,
+        //multicastLoopback: true,
+      );
+    }
     socket.joinMulticast(address);
 
     socket.listen((event) async {
@@ -46,7 +56,6 @@ class StaticSingleMultiCast {
               sourceAddress != InternetAddress.loopbackIPv4) {
             final BuzzMsg? msg = BuzzMsg.fromString(str);
             if (msg != null) {
-
               if (msg.cmd != BuzzDef.hbq && msg.cmd != BuzzDef.hbr) {
                 Log.log('StaticSingleMultiCast Received: $str');
               }
