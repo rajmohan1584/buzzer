@@ -20,8 +20,11 @@ void main() async {
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   CONST.appVersion = packageInfo.version;
-  CONST.myIP = await NUTIL.myIP();
-  CONST.myWifi = await NUTIL.myWifi();
+
+  if (Platform.isWindows) {
+    CONST.myIP = await NUTIL.myIP();
+    CONST.myWifi = await NUTIL.myWifi();
+  }
 
   bool has = GameCache.hasCache();
 
@@ -33,12 +36,6 @@ void main() async {
 
   await GameCache.clear();
 
-  /*
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)
-      .catchError((e) {
-    NLog.log(" Error : ${e.toString()}");
-  });
-  */
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await windowManager.ensureInitialized();
 
@@ -72,8 +69,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.light(),
+      theme: ThemeData.dark(),
+      darkTheme: ThemeData.dark(),
       home: const Home(),
     );
   }

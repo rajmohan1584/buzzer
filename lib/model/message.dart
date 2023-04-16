@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:buzzer/model/defs.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:intl/intl.dart';
 
@@ -64,6 +65,11 @@ class BuzzMsg {
     String sourceId = a[2] ?? "";
     String targetId = a[3] ?? "";
     BuzzMap data = json.decode(a[4]!);
+
+    // Hack
+    if (data[BuzzDef.nameUtf8] != null) {
+      data[BuzzDef.nameUtf8] = LANG.parseNameUtf8(data);
+    }
 
     return BuzzMsg(source, cmd, data, sourceId: sourceId, targetId: targetId);
   }

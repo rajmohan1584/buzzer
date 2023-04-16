@@ -8,6 +8,7 @@ import 'package:buzzer/server/client_detail.dart';
 import 'package:buzzer/server/helper.dart';
 import 'package:buzzer/server/server_settings.dart';
 import 'package:buzzer/util/buzz_state.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:buzzer/widgets/double_switch.dart';
 import 'package:flutter/cupertino.dart';
@@ -51,6 +52,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void initState() {
     Log.log('Server InitState');
     dbController.addListener(handleHandleDoubleButtonChange);
+
     startMulticastTimer();
 
     StaticSingleMultiCast.mainQueue.stream.listen((BuzzMsg msg) {
@@ -91,6 +93,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     });
 
     MultiplexorSender.start();
+
     super.initState();
   }
 
@@ -136,17 +139,22 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     assert(client.id == id);
 
     String name = msg.data[BuzzDef.name];
+    StringUtf8 nameUtf8 = msg.data[BuzzDef.nameUtf8] ?? [];
     int avatar = msg.data[BuzzDef.avatar];
+    if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
 
     if (name.isEmpty) name = "Unknown";
     if (avatar < 1) avatar = 1;
 
     setState(() {
       client.setName(name);
+      client.setNameUtf8(nameUtf8);
       client.setAvatar(avatar);
 
       msg.data[BuzzDef.name] = name;
+      msg.data[BuzzDef.nameUtf8] = LANG.name2Socket(name);
       msg.data[BuzzDef.avatar] = avatar;
+      msg.data[BuzzDef.score] = client.score;
     });
 
     final BuzzMsg ncResponse = BuzzMsg(
@@ -656,7 +664,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   */
 
   void sendScoreToClient(BuzzClient client) {
-    final data = {"score": client.score};
+    final BuzzMap data = {BuzzDef.score: client.score};
     final score =
         BuzzMsg(BuzzDef.server, BuzzDef.score, data, targetId: client.id);
     StaticSingleMultiCast.sendBuzzMsg(score);

@@ -1,3 +1,5 @@
+import 'package:buzzer/model/defs.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -36,10 +38,16 @@ class _TopBuzzersState extends State<TopBuzzers> {
   }
 
   Widget buildBuzzer(Map buzzer) {
-    final int position = buzzer["position"] ?? -1;
-    final String name = buzzer["name"] ?? "Unk";
-    final String id = buzzer["id"] ?? "";
-    final String buzzedDelta = buzzer["buzzedDelta"] ?? "";
+    final int position = buzzer[BuzzDef.position] ?? -1;
+    final String id = buzzer[BuzzDef.id] ?? "";
+    final String buzzedDelta = buzzer[BuzzDef.buzzedDelta] ?? "";
+
+    String name = buzzer[BuzzDef.name] ?? "Unk";
+    StringUtf8 nameUtf8 = [];
+    if (buzzer[BuzzDef.nameUtf8] != null) {
+      nameUtf8 = buzzer[BuzzDef.nameUtf8].cast<int>();
+    }
+    if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
 
     final children = <Widget>[
       Text(

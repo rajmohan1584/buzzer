@@ -5,6 +5,7 @@ import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/server/server.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,7 @@ class _HomeState extends State<Home> {
 
   // Get it from cache later
   late String userId;
+  late StringUtf8 userNameUtf8;
   late String userName;
   late int userAvatar;
 
@@ -63,8 +65,11 @@ class _HomeState extends State<Home> {
     // Get it from cache later
     BuzzMap? savedUser = GameCache.getSavedClientFromCache();
     userId = savedUser?[BuzzDef.id] ?? "";
-    userName = savedUser?[BuzzDef.name] ?? "";
     userAvatar = savedUser?[BuzzDef.avatar] ?? 0;
+
+    userName = savedUser?[BuzzDef.name] ?? "";
+    userNameUtf8 = LANG.parseNameUtf8(savedUser);
+    if (userNameUtf8.isNotEmpty) userName = LANG.socket2Name(userNameUtf8);
 
     userNameController.text = userName;
     super.initState();
@@ -383,7 +388,7 @@ class _HomeState extends State<Home> {
             textAlign: TextAlign.center,
             maxLength: 25,
             decoration: const InputDecoration(
-                hintText: "உ ண்   பெ ய ர்",
+                hintText: "உ ன்   பெ ய ர்",
                 hintStyle: TextStyle(color: Colors.blueGrey)),
             focusNode: focusNode,
             autofocus: true,

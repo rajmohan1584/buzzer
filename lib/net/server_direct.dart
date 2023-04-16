@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/log.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -28,10 +29,13 @@ class ServerDirectReceiver {
           Log.log('ServerDirectReceiver> WebSocketChannel connected:');
 
           channel.stream.listen((str) {
-            Log.log('ServerDirectReceiver> Received message: $str');
             final BuzzMsg? msg = BuzzMsg.fromString(str);
             if (msg != null) {
-              androidInQueue.add(msg);
+              if (msg.cmd != BuzzDef.hbq && msg.cmd != BuzzDef.hbr) {
+                androidInQueue.add(msg);
+              }
+            } else {
+              Log.log('ServerDirectReceiver> Received message: $str');
             }
           });
 

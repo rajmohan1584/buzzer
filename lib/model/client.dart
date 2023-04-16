@@ -3,6 +3,7 @@ import 'package:buzzer/model/message.dart';
 import 'package:buzzer/util/buzz_state.dart';
 import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/util/format.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/log.dart';
 
 class BuzzClient {
@@ -23,6 +24,7 @@ class BuzzClient {
   int get score => data[BuzzDef.score]!;
 
   void setName(String name) => data[BuzzDef.name] = name;
+  void setNameUtf8(StringUtf8 nameUtf8) => data[BuzzDef.nameUtf8] = nameUtf8;
   void setAvatar(int avatar) => data[BuzzDef.avatar] = avatar;
 
   void setScore(int score) => data[BuzzDef.score] = score;
@@ -168,10 +170,11 @@ class BuzzClients {
         final buzzedDelta = FMT.buzzedDelta(client.buzzedYesDelta);
 
         buzzed.add({
-          "position": i,
-          "id": client.id,
-          "buzzedDelta": buzzedDelta,
-          "name": client.name
+          BuzzDef.position: i,
+          BuzzDef.id: client.id,
+          BuzzDef.buzzedDelta: buzzedDelta,
+          BuzzDef.name: client.name,
+          BuzzDef.nameUtf8: LANG.name2Socket(client.name)
         });
         if (i == max) break;
       }

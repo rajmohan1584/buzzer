@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:buzzer/model/defs.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -110,10 +111,12 @@ class GameCache {
 
     String id = data[BuzzDef.id];
     assert(id.isNotEmpty);
+    int avatar = data[BuzzDef.avatar] ?? 0;
 
     // Try to use the client passed in data (from cache)
     String name = data[BuzzDef.name] ?? "";
-    int avatar = data[BuzzDef.avatar] ?? 0;
+    StringUtf8 nameUtf8 = LANG.parseNameUtf8(data);
+    if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
 
     String newName = name.isEmpty ? 'Participant_$count' : name;
     int newAvatar = avatar <= 1
@@ -128,6 +131,7 @@ class GameCache {
     // Also create a new key with id and the {}
     //assert(await getClient(id) == null);
     data[BuzzDef.name] = newName;
+    data[BuzzDef.nameUtf8] = LANG.name2Socket(newName);
     data[BuzzDef.avatar] = newAvatar;
     data[BuzzDef.score] = 0;
     await setClient(id, data);

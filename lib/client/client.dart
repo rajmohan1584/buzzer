@@ -5,6 +5,7 @@ import 'package:buzzer/client/saved_user_datail.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/server_direct.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/widgets/top_buzzers.dart';
 import 'package:flutter/material.dart';
 import 'package:buzzer/util/buzz_state.dart';
@@ -34,7 +35,6 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     with SingleTickerProviderStateMixin {
   BuzzState state = BuzzState.clientWaitingForServer;
   bool connected = false;
-  int myScore = 0;
   final audioPlayer = AudioPlayer();
   String error = "";
   int secondsRemaining = 0;
@@ -48,6 +48,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   late String userId;
   late String userName;
   late int userAvatar;
+  int userScore = 0;
 
   @override
   void initState() {
@@ -123,7 +124,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
         children: [
           WIDGETS.clientAvatar(userAvatar, color),
           name,
-          WIDGETS.nameValue("SCORE", "$myScore", fontSize: 30.0),
+          WIDGETS.nameValue("SCORE", "$userScore", fontSize: 30.0),
           WIDGETS.bellIconButton(() => sendPingToServer(),
               hShake: bellRinging, vShake: bellFlashing),
         ]);
@@ -175,11 +176,11 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     final BuzzMap data = {
       BuzzDef.id: userId,
       BuzzDef.name: userName,
+      BuzzDef.nameUtf8: LANG.name2Socket(userName),
       BuzzDef.avatar: userAvatar
     };
 
-    BuzzMsg msg =
-        BuzzMsg(BuzzDef.client, BuzzDef.newClientRequest, data,
+    BuzzMsg msg = BuzzMsg(BuzzDef.client, BuzzDef.newClientRequest, data,
         sourceId: userId);
     await StaticSingleMultiCast.sendBuzzMsg(msg);
   }
@@ -410,7 +411,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     if (msg.cmd == BuzzDef.score) {
       int score = msg.data[BuzzDef.score] ?? 0;
       setState(() {
-        myScore = score;
+        userScore = score;
       });
       return;
     }
@@ -445,7 +446,11 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
     // Get the new client data from server
     String name = msg.data[BuzzDef.name] ?? "";
+    StringUtf8 nameUtf8 = LANG.parseNameUtf8(msg.data);
+    if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
+
     int avatar = msg.data[BuzzDef.avatar] ?? 0;
+    int score = msg.data[BuzzDef.score] ?? 0;
 
     //
     // Cannot be empty
@@ -459,6 +464,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     setState(() {
       userName = name;
       userAvatar = avatar;
+      userScore = score;
     });
 
     GameCache.saveClientInCache(msg.data);

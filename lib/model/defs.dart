@@ -33,6 +33,7 @@ class BuzzDef {
 
   static get id => "ID";
   static get name => "NAME";
+  static get nameUtf8 => "NAME-UTF8";
   static get avatar => "AVATAR";
 
   static get app => "APP";
@@ -41,8 +42,12 @@ class BuzzDef {
   static get count => "COUNT";
   static get sec => "SEC";
 
+  static get position => "position";
+  static get buzzedDelta => "buzzedDelta";
+
   // Client data - only one per client per box.
   static get savedClient => "SAVED-CLIENT";
 }
 
 typedef BuzzMap = Map<String, dynamic>;
+typedef StringUtf8 = List<int>;

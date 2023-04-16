@@ -1,5 +1,6 @@
 import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -42,8 +43,11 @@ class _SavedUserDetailState extends State<SavedUserDetail> {
 
   Widget buildDetail() {
     String id = savedUser?[BuzzDef.id] ?? "null";
-    String name = savedUser?[BuzzDef.name] ?? "null";
     int avatar = savedUser?[BuzzDef.avatar] ?? 0;
+
+    String name = savedUser?[BuzzDef.name] ?? "null";
+    StringUtf8 nameUtf8 = LANG.parseNameUtf8(savedUser);
+    if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
 
     return Column(
       children: [
