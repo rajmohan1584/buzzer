@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:buzzer/client/avatar_selector.dart';
+import 'package:buzzer/client/client_name_input.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/single_multicast.dart';
@@ -278,6 +280,10 @@ class _HomeState extends State<Home> {
   }
   */
 
+  onUserAvatarChanged(int avatar) {
+    setState(() => userAvatar = avatar);
+  }
+
   @override
   Widget build(BuildContext context) {
     double w = MediaQuery.of(context).size.width;
@@ -344,16 +350,6 @@ class _HomeState extends State<Home> {
   List<Widget> buildInputs(w) {
     final List<Widget> children = [];
 
-    final List<Widget> avatars = [];
-    for (var i = 1; i <= 6; i++) {
-      final color = userAvatar == i ? CONST.textColor : Colors.black;
-      avatars.add(GestureDetector(
-          onTap: () => setState(() {
-                userAvatar = userAvatar == i ? -1 : i;
-              }),
-          child: WIDGETS.clientAvatar(i, color)));
-    }
-
     if (allowServerLogin) {
       children.add(SizedBox(
         width: w / 2,
@@ -372,15 +368,10 @@ class _HomeState extends State<Home> {
             style: TextStyle(fontSize: 32, color: CONST.textColor)),
       ));
     } else if (allowClientLogin) {
-      children.add(SizedBox(
-          width: w / 2,
-          height: 175,
-          child: GridView.count(
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              crossAxisCount: 3,
-              children: avatars)));
+      children.add(UserAvatarSelector(userAvatar, onUserAvatarChanged, w));
 
+      children.add(UserNameInput(userName, userNameController, w));
+      /*
       children.add(SizedBox(
         width: w / 1.5,
         height: 50,
@@ -399,6 +390,7 @@ class _HomeState extends State<Home> {
             onChanged: onClientNameChanged,
             style: TextStyle(fontSize: 32, color: CONST.textColor)),
       ));
+      */
     } else {
       children.add(const SizedBox(height: 1));
     }

@@ -115,6 +115,15 @@ class WIDGETS {
         ));
   }
 
+static Widget tamilText2(
+      String text, double fontSize, bool center, bool underline) {
+    return Text(text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          fontFamily: "Catamaran-VariableFont_wght",
+        ));
+  }
   static Widget appBarTitle({String name = ""}) {
     return Text("தெரியுமா?  ${CONST.appVersion}  $name",
         style: const TextStyle(

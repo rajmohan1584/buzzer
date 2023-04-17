@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:buzzer/client/saved_user_datail.dart';
+import 'package:buzzer/client/user_client_detail.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/net/server_direct.dart';
@@ -102,7 +102,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const SavedUserDetail()))
+                      builder: (context) =>
+                          UserClientDetail(userName, userAvatar)))
             },
         child: buildMyself());
 
