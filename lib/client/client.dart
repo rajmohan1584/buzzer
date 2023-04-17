@@ -429,10 +429,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     }
 
     if (msg.cmd == BuzzDef.updateClientResponse) {
-      setState(() {
-        userName = msg.data[BuzzDef.name];
-        userAvatar = msg.data[BuzzDef.avatar];
-      });
+      processUpdateClientResponse(msg);
       return;
     }
   }
@@ -482,6 +479,17 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     });
 
     GameCache.saveClientInCache(msg.data);
+  }
+
+  processUpdateClientResponse(BuzzMsg msg) {
+    String name = msg.data[BuzzDef.name];
+    StringUtf8 nameUtf8 = LANG.parseNameUtf8(msg.data);
+    if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
+
+    setState(() {
+      userName = name;
+      userAvatar = msg.data[BuzzDef.avatar];
+    });
   }
 
   processRejoinClient(BuzzMsg msg) {

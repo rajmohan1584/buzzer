@@ -821,6 +821,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   processClientUpdate(BuzzClient client, BuzzMsg msg) {
     String newName = msg.data[BuzzDef.name] ?? "";
+    StringUtf8 nameUtf8 = LANG.parseNameUtf8(msg.data);
+    if (nameUtf8.isNotEmpty) newName = LANG.socket2Name(nameUtf8);
     final int newAvatar = msg.data[BuzzDef.avatar] ?? 0;
 
     if (newName.isEmpty) {
