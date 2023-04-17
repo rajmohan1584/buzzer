@@ -40,20 +40,14 @@ class GameCache {
   }
 
   //////////////////////////////////////////////////////////////////////
-  // hasCache
   //
-  static Future<int> getNextClientCount() async {
-    int? count = _prefs.getInt(BuzzDef.count);
-    if (count == null) {
-      // first participent
-      count = 1;
-    } else {
-      count++;
-    }
+  static int getNextClientCount() {
+    return ++_c;
+  }
 
-    await _prefs.setInt(BuzzDef.count, count);
-
-    return count;
+  static String getNextClientName() {
+    int count = getNextClientCount();
+    return 'Participant_$count';
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -107,7 +101,7 @@ class GameCache {
     //
 
     // Create a new name
-    int count = ++_c; //await getNextClientCount();
+    String nextName = getNextClientName();
 
     String id = data[BuzzDef.id];
     assert(id.isNotEmpty);
@@ -118,7 +112,7 @@ class GameCache {
     StringUtf8 nameUtf8 = LANG.parseNameUtf8(data);
     if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
 
-    String newName = name.isEmpty ? 'Participant_$count' : name;
+    String newName = name.isEmpty ? nextName : name;
     int newAvatar = avatar <= 1
         ? UTIL.randomInt(min: 1, max: 6)
         : avatar; // TODO - get the max from ??

@@ -2,16 +2,15 @@ import 'package:buzzer/client/avatar_selector.dart';
 import 'package:buzzer/client/client_name_input.dart';
 import 'package:buzzer/model/defs.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/model/user.dart';
 import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/widgets.dart';
 import 'package:flutter/material.dart';
 
 class UserClientDetail extends StatefulWidget {
-  const UserClientDetail(this.userName, this.userAvatar, {Key? key})
-      : super(key: key);
+  const UserClientDetail(this.user, {Key? key}) : super(key: key);
 
-  final String userName;
-  final int userAvatar;
+  final User user;
 
   @override
   State<UserClientDetail> createState() => _UserClientDetailState();
@@ -19,6 +18,7 @@ class UserClientDetail extends StatefulWidget {
 
 class _UserClientDetailState extends State<UserClientDetail> {
   late BuzzMap? savedUser;
+  late String userId;
   late String userName;
   late int userAvatar;
 
@@ -27,8 +27,9 @@ class _UserClientDetailState extends State<UserClientDetail> {
   @override
   void initState() {
     loadCache();
-    userName = widget.userName;
-    userAvatar = widget.userAvatar;
+    userId = widget.user.id;
+    userName = widget.user.name;
+    userAvatar = widget.user.avatar;
 
     userNameController.text = userName;
 
@@ -56,8 +57,13 @@ class _UserClientDetailState extends State<UserClientDetail> {
     setState(() => userAvatar = avatar);
   }
 
-  onCancel() {}
-  onSave() {}
+  onCancel() {
+    Navigator.pop(context, null);
+  }
+
+  onSave() {
+    Navigator.pop(context, User(userId, userName, userAvatar));
+  }
 
   Widget buildBody() {
     return Padding(padding: const EdgeInsets.all(8.0), child: buildDetail());

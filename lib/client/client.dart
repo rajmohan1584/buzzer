@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/client/user_client_detail.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/model/user.dart';
 import 'package:buzzer/net/server_direct.dart';
 import 'package:buzzer/util/language.dart';
 import 'package:buzzer/widgets/top_buzzers.dart';
@@ -20,12 +21,9 @@ import '../net/single_multicast.dart';
 const bool bellAudioEnabled = false;
 
 class BuzzClientScreen extends StatefulWidget {
-  final String userId;
-  final String userName;
-  final int userAvatar;
+  final User user;
 
-  const BuzzClientScreen(this.userId, this.userName, this.userAvatar,
-      {super.key});
+  const BuzzClientScreen(this.user, {super.key});
 
   @override
   State<BuzzClientScreen> createState() => _BuzzClientScreenState();
@@ -52,9 +50,9 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
 
   @override
   void initState() {
-    userId = widget.userId;
-    userName = widget.userName;
-    userAvatar = widget.userAvatar;
+    userId = widget.user.id;
+    userName = widget.user.name;
+    userAvatar = widget.user.avatar;
 
     Log.log('Client InitState');
     ServerDirectReceiver.start();
@@ -97,14 +95,20 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
   Widget buildBody() {
     final List<Widget> children = buildPlayArea();
 
+    User user = User(userId, userName, userAvatar);
     Widget card = GestureDetector(
-        onTap: () => {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          UserClientDetail(userName, userAvatar)))
-            },
+        onTap: () async {
+          User? updatedUser = await Navigator.push(context,
+              MaterialPageRoute(builder: (context) => UserClientDetail(user)));
+          if (updatedUser != null) {
+            // Update the User's name and/or avatar
+            BuzzMap data = user.getMap();
+            BuzzMsg editUser = BuzzMsg(
+                BuzzDef.client, BuzzDef.updateClientRequest, data,
+                sourceId: user.id);
+            StaticSingleMultiCast.sendBuzzMsg(editUser);
+          }
+        },
         child: buildMyself());
 
     return Column(children: [
@@ -421,6 +425,15 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       setState(() {
         topBuzzers = msg.data;
       });
+      return;
+    }
+
+    if (msg.cmd == BuzzDef.updateClientResponse) {
+      setState(() {
+        userName = msg.data[BuzzDef.name];
+        userAvatar = msg.data[BuzzDef.avatar];
+      });
+      return;
     }
   }
 

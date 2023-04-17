@@ -9,6 +9,9 @@ class BuzzDef {
   static get newClientResponse => "NCR";
   //static get rejoinClientResponse => "RCR";
 
+  static get updateClientRequest => "UCQ";
+  static get updateClientResponse => "UCR";
+
   static get lgq => "LGQ"; // Login Request
   static get lgr => "LGR"; // Login Response
   static get hbq => "HBQ"; // Heartbeat Request

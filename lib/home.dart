@@ -5,6 +5,7 @@ import 'package:buzzer/client/avatar_selector.dart';
 import 'package:buzzer/client/client_name_input.dart';
 import 'package:buzzer/model/constants.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/model/user.dart';
 import 'package:buzzer/net/single_multicast.dart';
 import 'package:buzzer/server/server.dart';
 import 'package:buzzer/util/language.dart';
@@ -152,7 +153,7 @@ class _HomeState extends State<Home> {
         context,
         MaterialPageRoute(
             builder: (BuildContext context) =>
-                BuzzClientScreen(userId, userName, userAvatar)));
+                BuzzClientScreen(User(userId, userName, userAvatar))));
   }
 
   void gotoServer() {

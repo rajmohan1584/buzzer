@@ -766,7 +766,14 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       processClientBuzz(client, msg);
       return;
     }
-    Log.log('onClientMessage - complete');
+
+    if (msg.cmd == BuzzDef.updateClientRequest) {
+      processClientUpdate(client, msg);
+      return;
+    }
+
+    Log.log('onClientMessage - Unknown Message ${msg.toSocketMsg()}');
+    assert(false);
   }
 
   processPing(BuzzClient client) {
@@ -810,5 +817,27 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       // Round Done
       onStopRound();
     }
+  }
+
+  processClientUpdate(BuzzClient client, BuzzMsg msg) {
+    String newName = msg.data[BuzzDef.name] ?? "";
+    final int newAvatar = msg.data[BuzzDef.avatar] ?? 0;
+
+    if (newName.isEmpty) {
+      newName = GameCache.getNextClientName();
+    }
+    setState(() {
+      client.setName(newName);
+      client.setAvatar(newAvatar);
+    });
+
+    msg.data[BuzzDef.name] = newName;
+    msg.data[BuzzDef.nameUtf8] = LANG.name2Socket(newName);
+    msg.data[BuzzDef.avatar] = newAvatar;
+
+    BuzzMsg updateResponseMsg = BuzzMsg(
+        BuzzDef.server, BuzzDef.updateClientResponse, msg.data,
+        targetId: msg.sourceId);
+    StaticSingleMultiCast.sendBuzzMsg(updateResponseMsg);
   }
 }
