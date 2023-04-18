@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:buzzer/model/game_cache.dart';
+import 'package:buzzer/model/server.dart';
 import 'package:buzzer/model/server_settings.dart';
 import 'package:buzzer/net/multiplexor.dart';
 import 'package:buzzer/server/client_detail.dart';
@@ -32,7 +33,7 @@ class BuzzServerScreen extends StatefulWidget {
 }
 
 class _BuzzServerScreenState extends State<BuzzServerScreen> {
-  final BuzzClients clients = BuzzClients();
+  final BuzzServer server = BuzzServer();
   BuzzState state = BuzzState.serverWaitingForClients;
   String myIP = "";
   String myWifi = "";
@@ -52,6 +53,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   @override
   void initState() {
     Log.log('Server InitState');
+    settings.loadFromCache();
+
     dbController.addListener(handleHandleDoubleButtonChange);
 
     startMulticastTimer();
@@ -64,7 +67,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       }
 
       // Messages from a particular client
-      BuzzClient? client = clients.findById(msg.sourceId);
+      BuzzClient? client = server.findById(msg.sourceId);
 
       // Race condition
       // Client has an id but server has not processed the registration
@@ -107,7 +110,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     audioPlayer.dispose();
     super.dispose();
   }
-
 
   ///////////////////////////////////////////
   // UI
@@ -155,7 +157,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   Widget buildClients() {
-    final count = clients.length;
+    final count = server.length;
     if (count == 0) {
       // Waiting for clients.
       return Center(child: WIDGETS.waitingForClients());
@@ -163,13 +165,13 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     if (settings.viewMode == "grid") {
       return GridView.builder(
-          itemCount: clients.length,
+          itemCount: server.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 2,
           ),
           itemBuilder: (context, int index) {
-            BuzzClient client = clients.clients[index];
+            BuzzClient client = server.clients[index];
             // todo - call buildServer
             return GestureDetector(
                 onTap: () => {
@@ -184,9 +186,9 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     }
 
     return ListView.builder(
-      itemCount: clients.length,
+      itemCount: server.length,
       itemBuilder: (context, int index) {
-        BuzzClient client = clients.clients[index];
+        BuzzClient client = server.clients[index];
         // todo - call buildServer
         return GestureDetector(
             onTap: () => {
@@ -373,7 +375,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     }
 
     setState(() {
-      clients.performHealthCheck();
+      server.performHealthCheck();
     });
   }
 
@@ -388,6 +390,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
       client.setScore(score);
       sendScoreToClient(client);
     });
+    server.saveInCache();
   }
 
   void onStartRound() {
@@ -453,7 +456,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   Widget handleServerWaitingForClients() {
-    final counts = clients.counts;
+    final counts = server.counts;
     final total = counts[0],
         alive = counts[1],
         dead = counts[2],
@@ -487,6 +490,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         setState(() {
           settings = result;
         });
+        settings.saveInCache();
       }
     });
     final settingsSegue2 = GestureDetector(
@@ -612,10 +616,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   void sendTopBuzzersToAllClients() {
-    clients.sortByBuzzedUpdated();
+    server.sortByBuzzedUpdated();
 
     // Get the top buzzedCount clients.
-    final data = clients.getTopBuzzedData(settings.buzzedCount);
+    final data = server.getTopBuzzedData(settings.buzzedCount);
 
     final topBuzzers =
         BuzzMsg(BuzzDef.server, BuzzDef.topBuzzers, data, targetId: "ALL");
@@ -623,10 +627,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   }
 
   void showBuzzerToAllClients() {
-    for (var i = 0; i < clients.length; i++) {
+    for (var i = 0; i < server.length; i++) {
       setState(() {
-        clients[i].buzzedState = "";
-        clients[i].buzzedYesDelta = null;
+        server[i].buzzedState = "";
+        server[i].buzzedYesDelta = null;
       });
     }
     final showBuzz =
@@ -646,25 +650,6 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         BuzzMsg(BuzzDef.server, BuzzDef.countdown, data, targetId: 'ALL');
     StaticSingleMultiCast.sendBuzzMsg(countdown);
   }
-
-  /*
-  //
-  void sendAreYouReadyToClient(BuzzClient client) {
-    final areYouReady = BuzzMsg(BuzzCmd.server, BuzzCmd.areYouReady, {});
-    client.sendMessage(areYouReady);
-    setState(() {
-      client.buzzedState = "";
-      client.iAmReady = false;
-      client.updated = DateTime.now();
-    });
-  }
-
-  void sendAreYouReadyToAllClients() {
-    for (var i = 0; i < clients.length; i++) {
-      sendAreYouReadyToClient(clients[i]);
-    }
-  }
-  */
 
   ////////////////////////////////////////////////////////
   ///
@@ -724,7 +709,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
   processHeartbeatResponse(BuzzMsg msg) {
     final String id = msg.sourceId;
-    final BuzzClient? client = clients.findById(id);
+    final BuzzClient? client = server.findById(id);
     assert(client != null);
     client?.updated = DateTime.now();
   }
@@ -742,10 +727,10 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         }
         prevYesBuzzTime = client.updated;
       }
-      clients.sortByBuzzedUpdated();
+      server.sortByBuzzedUpdated();
     });
 
-    final counts = clients.counts;
+    final counts = server.counts;
     final total = counts[0], yes = counts[3], no = counts[4];
 
     if (total == yes + no) {
@@ -769,7 +754,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     // Successful add of new client.
     // Create a new client card.
     setState(() {
-      clients.add(newData);
+      server.add(newData);
     });
 
     // return new server-assigned name
@@ -779,7 +764,8 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
 
     Log.log(ncResponse.toSocketMsg());
     StaticSingleMultiCast.sendBuzzMsg(ncResponse);
-    GameCache.dump();
+
+    server.saveInCache();
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -816,8 +802,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     Log.log(ncResponse.toSocketMsg());
     StaticSingleMultiCast.sendBuzzMsg(ncResponse);
 
-    // TODO GameCache.addRejoinClient(id, name);
-    GameCache.dump();
+    server.saveInCache();
   }
 
   processUpdateClientRequest(BuzzClient client, BuzzMsg msg) {
@@ -842,5 +827,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
         BuzzDef.server, BuzzDef.updateClientResponse, msg.data,
         targetId: msg.sourceId);
     StaticSingleMultiCast.sendBuzzMsg(updateResponseMsg);
+
+    server.saveInCache();
   }
 }

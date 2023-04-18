@@ -51,7 +51,7 @@ class GameCache {
   }
 
   //////////////////////////////////////////////////////////////////////
-  // hasCache
+  // Dump
   //
   static void dump() {
     final List<String> clients = getClients();
@@ -69,6 +69,30 @@ class GameCache {
         Log.log('$cid - ${client.toString()}');
       }
     }
+  }
+
+  ///////////////////////////////////////////////
+  ///
+  /// Low level
+  ///
+  static setString(String key, String value) async {
+    await _prefs.setString(key, value);
+  }
+
+  static String getString(String key, {dflt = ""}) {
+    String? value = _prefs.getString(key);
+    if (value != null) return value;
+    return dflt;
+  }
+
+  static setBool(String key, bool value) async {
+    await _prefs.setBool(key, value);
+  }
+
+  static bool getBool(String key, {dflt = false}) {
+    bool? value = _prefs.getBool(key);
+    if (value != null) return value;
+    return dflt;
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -211,8 +235,9 @@ class GameCache {
   //////////////////////////////////////////////////////////////////
   ///
   /// This will be called by the client.
+  ///
   static BuzzMap? getSavedClientFromCache() {
-    // onlu one client can be saved.
+    // only one client can be saved.
     // If running multiple instane of the program on the same box
     //   it may not work
     String sClient = _prefs.getString(BuzzDef.savedClient) ?? "";
