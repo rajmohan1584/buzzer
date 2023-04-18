@@ -102,7 +102,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
               MaterialPageRoute(builder: (context) => UserClientDetail(user)));
           if (updatedUser != null) {
             // Update the User's name and/or avatar
-            BuzzMap data = user.getMap();
+            BuzzMap data = updatedUser.getMap();
             BuzzMsg editUser = BuzzMsg(
                 BuzzDef.client, BuzzDef.updateClientRequest, data,
                 sourceId: user.id);
@@ -470,7 +470,7 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
     // If empty, the server should have assigned a new name and avatar
     //
     assert(name.isNotEmpty);
-    assert(avatar >= 1);
+    assert(avatar >= 0);
 
     setState(() {
       userName = name;
@@ -490,6 +490,8 @@ class _BuzzClientScreenState extends State<BuzzClientScreen>
       userName = name;
       userAvatar = msg.data[BuzzDef.avatar];
     });
+
+    GameCache.saveClientInCache(msg.data);
   }
 
   processRejoinClient(BuzzMsg msg) {

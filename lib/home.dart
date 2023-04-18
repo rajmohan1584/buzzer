@@ -149,6 +149,8 @@ class _HomeState extends State<Home> {
     _streamSubscription = null;
     stopQuizMasterCheckTimer();
 
+    userName = userNameController.text;
+
     Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -312,7 +314,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
         appBar: AppBar(
             leading: WIDGETS.heartbeatIcon(anotherQuizMasterIsRunning),
-            title: const Text("Buzzer - Searching...")),
+            title: WIDGETS.appBarTitle(name: "Searching...")),
         backgroundColor: Colors.black,
         floatingActionButton: fab,
         body: Column(children: children));

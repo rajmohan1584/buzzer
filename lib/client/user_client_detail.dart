@@ -62,6 +62,7 @@ class _UserClientDetailState extends State<UserClientDetail> {
   }
 
   onSave() {
+    userName = userNameController.text;
     Navigator.pop(context, User(userId, userName, userAvatar));
   }
 

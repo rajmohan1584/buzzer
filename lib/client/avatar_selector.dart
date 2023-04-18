@@ -17,6 +17,7 @@ class UserAvatarSelector extends StatelessWidget {
   buildAvatarGrid() {
     final List<Widget> avatars = [];
     for (var i = 1; i <= 6; i++) {
+      // TODO - get min max from somewhere
       final color = userAvatar == i ? CONST.textColor : Colors.black;
       avatars.add(GestureDetector(
           onTap: () {

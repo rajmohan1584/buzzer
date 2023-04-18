@@ -47,7 +47,7 @@ class GameCache {
 
   static String getNextClientName() {
     int count = getNextClientCount();
-    return 'Participant_$count';
+    return 'நண்பர்_$count';
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -113,9 +113,14 @@ class GameCache {
     if (nameUtf8.isNotEmpty) name = LANG.socket2Name(nameUtf8);
 
     String newName = name.isEmpty ? nextName : name;
+
+    // If the user did not pick an avatar - we'll decide what to do later
+    /*
     int newAvatar = avatar <= 1
         ? UTIL.randomInt(min: 1, max: 6)
         : avatar; // TODO - get the max from ??
+    */
+    int newAvatar = avatar;
 
     // Add the id to the array of client ids.
     List<String> clients = getClients();
@@ -227,46 +232,3 @@ class GameCache {
   }
 }
 
-/*
-//////////////////////////////////////////////////////////////////////
-  // Register Client
-  // Client should pass its ID
-  // Name is optional (On a rejoin)
-  // Will return name and score and ??
-  //
-  static Future<BuzzMap> registerParticipant(String id,
-      {String name = ""}) async {
-    //
-    // Check if the ID exists.
-    // If so - send to reRegister
-    //
-    if (getClient(id) != null) {
-      return _reRegisterParticipant(id, name);
-    }
-
-    // If not create
-    // A new name gets generated for each new client.
-    // Also if a disconnected client comes in as a new one,
-    //    the score will be set to zero and the old connection will be stale.
-    //    And the stale connection should be purged later - // TODO
-    //
-
-    // Create a new name
-    int count = ++_participantId; //await getNextClientCount();
-    String newName = name.isNotEmpty ? name : 'Participant_$count';
-
-    // Add the id to the array of client ids.
-    List<String> clients = getClients();
-    clients.add(id);
-    setClients(clients);
-
-    // Also create a new key with id and the {}
-    //assert(await getClient(id) == null);
-    BuzzMap client = {};
-    client[BuzzDef.name] = newName;
-    client[BuzzDefscore] = 0;
-    await setClient(id, client);
-
-    return newName;
-  }
-  */
