@@ -1,6 +1,9 @@
 //import 'dart:io';
+import 'dart:convert';
+
 import 'package:buzzer/model/client.dart';
 import 'package:buzzer/model/defs.dart';
+import 'package:buzzer/model/game_cache.dart';
 import 'package:buzzer/util/format.dart';
 import 'package:buzzer/util/language.dart';
 import 'package:buzzer/util/log.dart';
@@ -154,7 +157,25 @@ class BuzzServer {
   ///
   /// Save / Restore
   ///
-  saveInCache() {}
+  saveInCache() async {
+    List<BuzzMap> clientJson = [];
+    for (var client in clients) {
+      clientJson.add(client.data);
+    }
 
-  loadFromCache() {}
+    String s = jsonEncode(clientJson);
+    await GameCache.setString("clients", s);
+  }
+
+  loadFromCache() {
+    String s = GameCache.getString("clients");
+    if (s.isEmpty) return;
+
+    List<dynamic> clientJson = jsonDecode(s);
+    clients.removeRange(0, clients.length);
+
+    for (var cj in clientJson) {
+      clients.add(BuzzClient(cj));
+    }
+  }
 }

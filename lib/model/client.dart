@@ -15,6 +15,9 @@ class BuzzClient {
   BuzzMsg? serverMsg;
   bool alive = true;
 
+  final BuzzMap data;
+  BuzzClient(this.data);
+
   // These "!" will crash if null. Watch out
   String get id => data[BuzzDef.id]!;
   String get name => data[BuzzDef.name]!;
@@ -25,9 +28,6 @@ class BuzzClient {
   void setAvatar(int avatar) => data[BuzzDef.avatar] = avatar;
 
   void setScore(int score) => data[BuzzDef.score] = score;
-
-  final BuzzMap data;
-  BuzzClient(this.data);
 
   performHealthCheck() {
     Duration d = DateTime.now().difference(updated);

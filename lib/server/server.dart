@@ -54,6 +54,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
   void initState() {
     Log.log('Server InitState');
     settings.loadFromCache();
+    server.loadFromCache();
 
     dbController.addListener(handleHandleDoubleButtonChange);
 
