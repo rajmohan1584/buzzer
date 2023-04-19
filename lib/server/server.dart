@@ -220,7 +220,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
             SlidableAction(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
-                onPressed: (_) => {},
+                onPressed: (_) => {onDeleteClient(client, index)},
                 icon: CupertinoIcons.delete,
                 label: 'Delete')
           ],
@@ -666,6 +666,16 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     StaticSingleMultiCast.sendBuzzMsg(ping);
   }
 
+  ////////////////////////////////////////////////////
+  ///
+  /// Delete the client
+  ///
+  onDeleteClient(BuzzClient client, int index) {
+    setState(() {
+      server.removeClient(client.id);
+    });
+  }
+
   /////////////////////////////////////////////////////////////////////////
   ///
   /// Receiving client messages
@@ -755,7 +765,7 @@ class _BuzzServerScreenState extends State<BuzzServerScreen> {
     // Successful add of new client.
     // Create a new client card.
     setState(() {
-      server.add(newData);
+      server.addClient(newData);
     });
 
     // return new server-assigned name

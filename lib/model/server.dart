@@ -59,7 +59,7 @@ class BuzzServer {
     }
   }
 
-  BuzzClient? add(BuzzMap data) {
+  BuzzClient? addClient(BuzzMap data) {
     String id = data[BuzzDef.id];
     if (findById(id) != null) {
       Log.log('Duplicate name $id');
@@ -72,7 +72,7 @@ class BuzzServer {
     return client;
   }
 
-  void remove(String id) {
+  void removeClient(String id) {
     final index = indexOfClient(id);
     if (index < 0) {
       Log.log('Cannot find id $id');
