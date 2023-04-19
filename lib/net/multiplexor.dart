@@ -22,8 +22,11 @@ class MultiplexorSender {
   static Future<void> start() async {
     // Listen to the androidOutQueue
     StaticSingleMultiCast.androidOutQueue.stream.listen((String s) {
-      Log.log(
-          'MultiplexorSender> WebSocket Sent to ${clients.length} clients: $s');
+      // Hack
+      if (s != "S~HBQ~~ALL~{}") {
+        Log.log(
+            'MultiplexorSender> WebSocket Sent to ${clients.length} clients: $s');
+      }
 
       // Forward all messages to all android clients.
       for (var client in clients) {
