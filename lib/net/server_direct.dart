@@ -11,6 +11,9 @@ Future<void> sleep(int ms) {
   return Future.delayed(duration);
 }
 
+// This Websocket receiver will be created by Android.
+// Since Android multicast does not seem to receive messages, we use this.
+//
 class ServerDirectReceiver {
   static final StreamController<BuzzMsg> androidInQueue =
       StreamController<BuzzMsg>();

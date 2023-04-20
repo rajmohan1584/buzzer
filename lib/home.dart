@@ -28,7 +28,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final FocusNode focusNode = FocusNode();
-  bool isAndroid = Platform.isAndroid;
+  bool isAndroid = Platform.isAndroid || CONST.androidSimulator;
 
   final maxlen = 6;
   String passkey = "";

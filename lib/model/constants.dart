@@ -10,6 +10,8 @@ class CONST {
   static String multicastIP = "239.1.2.3";
   static int multicastPort = 54321;
 
+  static bool androidSimulator = false;
+
   // Server sends message out.
   // Each client listens on this address.
   static String serverMulticastIP = "224.0.0.1";
